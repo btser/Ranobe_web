@@ -1,0 +1,23 @@
+# trash
+
+/target/
+/.mvn/
+/bin/
+
+# hide database account
+
+src/main/resources/application.properties
+
+# file IDE, editor
+
+.vscode/
+.idea/
+*.iml
+*.classpath
+*.project
+.settings/
+
+# File log
+
+.DS_Store
+*.log

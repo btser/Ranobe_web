@@ -16,7 +16,11 @@
     <description>Web project with Spring Boot and PostgreSQL</description>
 
     <properties>
-        <java.version>17</java.version> </properties>
+        <java.version>17</java.version>
+        <!-- Thêm 2 dòng dưới này vào -->
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+    </properties>
 
     <dependencies>
         <dependency>
@@ -27,6 +31,13 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-devtools</artifactId>
+            <scope>runtime</scope>
+            <optional>true</optional>
         </dependency>
 
         <dependency>

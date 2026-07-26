@@ -1,3 +1,4 @@
+package main.entity;
 
 
 import jakarta.persistence.*;
@@ -9,6 +10,9 @@ public class Category {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "category_id")
     private int categoryId;
+
+    @Column(name = "is_deleted")
+    private boolean isDeleted = false;
 
     @Column(name = "category_name")
     private String categoryName;
@@ -22,4 +26,5 @@ public class Category {
 
     public int getCategoryId() { return categoryId; }
     public String getCategoryName() { return categoryName; }
+    public boolean isDeleted() { return isDeleted; }
 }

@@ -1,9 +1,8 @@
+package main.entity;
 
 import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
-
-enum Status { PUBLIC, PRIVATE }
 
 @Entity
 @Table(name = "products")
@@ -20,16 +19,18 @@ public class Product {
     @Enumerated(EnumType.STRING)
     private Status status;
 
-    @ManyToOne
+    @Column(name = "is_deleted")
+    private boolean isDeleted = false;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")
     private Category category;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User uploader;
 
-    @OneToMany(cascade = CascadeType.ALL)
-    @JoinColumn(name = "product_id")
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Volume> volumes = new ArrayList<>();
 
     public Product() {}
@@ -44,12 +45,19 @@ public class Product {
         this.uploader = uploader;
     }
 
+    public void addVolume(Volume volume) {
+        this.volumes.add(volume);
+    }
+
     public int getProductId() { return productId; }
     public String getTitle() { return title; }
     public Category getCategory() { return category; }
     public List<Volume> getVolumes() { return volumes; }
-    
-    public void addVolume(Volume volume) {
-        this.volumes.add(volume);
-    }
+    public boolean isDeleted() { return isDeleted;}
+
+    public void setDeleted(boolean deleted) {isDeleted = deleted;}
+    public void setAuthor(String author) {this.author = author;}
+    public void setTitle(String title) {this.title = title;}
+    public void setArtist(String artist) {this.artist = artist;}
+    public void setStatus(Status status) {this.status = status;}
 }

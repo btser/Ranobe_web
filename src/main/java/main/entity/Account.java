@@ -1,3 +1,4 @@
+package main.entity;
 
 import jakarta.persistence.*;
 
@@ -12,6 +13,9 @@ public class Account {
     private String email;
     private String username;
     private String password;
+
+    @Column(name = "is_deleted")
+    private boolean isDeleted = false;
 
     @OneToOne
     @JoinColumn(name = "user_id", referencedColumnName = "user_id")
@@ -32,4 +36,8 @@ public class Account {
     public String getUsername() { return username; }
     public String getPassword() { return password; }
     public User getUser() { return user; }
+    public boolean isDeleted(){ return isDeleted; }
+
+    // set setter later
+    public void setDeleted(boolean deleted) {isDeleted = deleted;}
 }

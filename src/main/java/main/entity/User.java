@@ -1,3 +1,4 @@
+package main.entity;
 
 import jakarta.persistence.*;
 import java.util.Date;
@@ -27,8 +28,7 @@ public class User {
 
     public User() {}
 
-    public User(int userId, String userName, String avatarUrl, Date birth, String hobby, String introduce) {
-        this.userId = userId;
+    public User(String userName, String avatarUrl, Date birth, String hobby, String introduce) {
         this.userName = userName;
         this.avatarUrl = avatarUrl;
         this.birth = birth;
@@ -36,6 +36,10 @@ public class User {
         this.introduce = introduce;
     }
 
+    @Column(name = "is_deleted")
+    private boolean isDeleted = false;
+    
+    public boolean isDeleted() { return isDeleted;}
     public int getUserId() { return userId; }
     public String getUserName() { return userName; }
     public void setUserName(String userName) { this.userName = userName; }
