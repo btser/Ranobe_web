@@ -20,10 +20,10 @@ public class User {
     @Temporal(TemporalType.DATE)
     private Date birth;
 
-    @Lob
+    @Column(columnDefinition = "TEXT")
     private String hobby;
 
-    @Lob
+    @Column(columnDefinition = "TEXT")
     private String introduce;
 
     public User() {}
@@ -48,4 +48,20 @@ public class User {
     public Date getBirth() { return birth; }
     public String getHobby() { return hobby; }
     public String getIntroduce() { return introduce; }
+
+    public void setUserId(int userId) {
+        this.userId = userId;
+    }
+
+    public void setBirth(Date birth) {
+        this.birth = birth;
+    }
+
+    public void setHobby(String hobby) {
+        this.hobby = hobby;
+    }
+
+    public void setIntroduce(String introduce) {
+        this.introduce = introduce;
+    }
 }

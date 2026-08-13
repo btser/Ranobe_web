@@ -7,18 +7,16 @@ import java.util.List;
 @Entity
 @Table(name = "volumes")
 public class Volume {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "volume_id")
     private int volumeId;
 
-    @Column(name = "product_id")
-    private int productId;
-
-    @OneToMany(cascade = CascadeType.ALL)
-    @JoinColumn(name = "volume_id")
+    @OneToMany(mappedBy = "volume", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Chapter> chapters = new ArrayList<>();
 
+    @com.fasterxml.jackson.annotation.JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id")
     private Product product;
@@ -26,21 +24,28 @@ public class Volume {
     @Column(name = "is_deleted")
     private boolean isDeleted = false;
 
+    private String title;
+
     public Volume() {}
 
-    public Volume(int volumeId, int productId) {
+    public Volume(int volumeId, Product product) {
         this.volumeId = volumeId;
-        this.productId = productId;
+        this.product = product;
     }
     
-    public boolean isDeleted() { return isDeleted;}
+    public boolean isDeleted() { return isDeleted; }
     public int getVolumeId() { return volumeId; }
-    public int getProductId() { return productId; }
+    public Product getProduct() { return product; }
     public List<Chapter> getChapters() { return chapters; }
+    public String getTitle() { return this.title;}
 
     public void addChapter(Chapter chapter) {
         this.chapters.add(chapter);
     }
 
-    public void setDeleted(boolean deleted) {isDeleted = deleted;}
+    public void setTitle(String title) { this.title = title;}
+    public void setVolumeId(int volumeId) { this.volumeId = volumeId; }
+    public void setProduct(Product product) { this.product = product; }
+    public void setChapters(List<Chapter> chapters) { this.chapters = chapters; }
+    public void setDeleted(boolean deleted) { isDeleted = deleted; }
 }

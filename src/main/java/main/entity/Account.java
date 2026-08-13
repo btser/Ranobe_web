@@ -31,6 +31,7 @@ public class Account {
         this.user = user;
     }
 
+    // getter
     public int getAccountId() { return accountId; }
     public String getEmail() { return email; }
     public String getUsername() { return username; }
@@ -38,6 +39,26 @@ public class Account {
     public User getUser() { return user; }
     public boolean isDeleted(){ return isDeleted; }
 
-    // set setter later
+    // setter
     public void setDeleted(boolean deleted) {isDeleted = deleted;}
+
+    public void setAccountId(int accountId) {
+        this.accountId = accountId;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
 }

@@ -13,7 +13,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/manage")
-
 public class ContentController {
     @Autowired private ProductRepository productRepository;
     @Autowired private VolumeRepository volumeRepository;
@@ -22,7 +21,7 @@ public class ContentController {
     // ================= PRODUCT =================
     @GetMapping("/products")
     public List<Product> getAllActiveProducts() {
-        return productRepository.findByIsDeletedFalse(); // Chỉ lấy những truyện chưa ẩn
+        return productRepository.findByIsDeletedFalse();
     }
 
     @PostMapping("/products")
@@ -30,12 +29,11 @@ public class ContentController {
         return productRepository.save(product);
     }
 
-    // API Ẩn/Hiện Product
     @PutMapping("/products/{id}/toggle-hide")
     public String toggleHideProduct(@PathVariable Integer id) {
         Product product = productRepository.findById(id).orElse(null);
         if (product != null) {
-            product.setDeleted(!product.isDeleted()); // Đảo trạng thái ẩn/hiện
+            product.setDeleted(!product.isDeleted());
             productRepository.save(product);
             return "Đã đổi trạng thái ẩn cho Product ID: " + id;
         }
@@ -71,8 +69,8 @@ public class ContentController {
         if (chapter != null) {
             chapter.setDeleted(!chapter.isDeleted());
             chapterRepository.save(chapter);
-            return "Đã đổi trạng thái ẩn cho Chapter ID: " + id;
+            return "Đã đổi trạng thái ẩn cho chương: " + id;
         }
-        return "Không tìm thấy Chapter!";
+        return "Không tìm thấy chương!";
     }
 }

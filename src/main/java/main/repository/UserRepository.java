@@ -1,11 +1,13 @@
 package main.repository;
 
+import main.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import main.entity.User;
+import java.util.List;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, Integer> {
-    // Spring Boot tự hiểu và lo hết code ngầm bên dưới
+    // Tìm danh sách user chưa bị xóa mềm
+    List<User> findByIsDeletedFalse();
 }

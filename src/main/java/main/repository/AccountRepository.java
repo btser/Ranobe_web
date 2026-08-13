@@ -1,14 +1,16 @@
 package main.repository;
 
+import main.entity.Account;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import main.entity.Account;
-
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface AccountRepository extends JpaRepository<Account, Integer> {
-    // Làm thêm 1 hàm tiện ích để sau này làm tính năng Đăng Nhập (Tìm tài khoản bằng username)
-    List<Account> findbyIsDeletedFalse();
+    List<Account> findByIsDeletedFalse();
+    
+    // Tìm account theo username để xử lý Đăng nhập
+    Optional<Account> findByUsername(String username);
 }

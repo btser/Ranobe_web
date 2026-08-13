@@ -30,7 +30,7 @@ public class Product {
     @JoinColumn(name = "user_id")
     private User uploader;
 
-    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL)
     private List<Volume> volumes = new ArrayList<>();
 
     public Product() {}
@@ -49,15 +49,23 @@ public class Product {
         this.volumes.add(volume);
     }
 
+    
+
     public int getProductId() { return productId; }
     public String getTitle() { return title; }
     public Category getCategory() { return category; }
     public List<Volume> getVolumes() { return volumes; }
     public boolean isDeleted() { return isDeleted;}
+    public String getAuthor() { return author; }
+    public String getArtist() { return artist; }
+    public Status getStatus() { return status; }
+    public User getUploader() { return uploader; }
 
     public void setDeleted(boolean deleted) {isDeleted = deleted;}
     public void setAuthor(String author) {this.author = author;}
     public void setTitle(String title) {this.title = title;}
     public void setArtist(String artist) {this.artist = artist;}
     public void setStatus(Status status) {this.status = status;}
+    public void setUploader(User uploader) {this.uploader = uploader;}
+    public void setCategory(Category category) {this.category = category;}
 }
