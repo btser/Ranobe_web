@@ -14,6 +14,9 @@ public class Account {
     private String username;
     private String password;
 
+    @Enumerated(EnumType.STRING)
+    private AccountRole role = AccountRole.USER;
+
     @Column(name = "is_deleted")
     private boolean isDeleted = false;
 
@@ -37,28 +40,15 @@ public class Account {
     public String getUsername() { return username; }
     public String getPassword() { return password; }
     public User getUser() { return user; }
+    public AccountRole getRole() { return role; }
     public boolean isDeleted(){ return isDeleted; }
 
     // setter
     public void setDeleted(boolean deleted) {isDeleted = deleted;}
-
-    public void setAccountId(int accountId) {
-        this.accountId = accountId;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    public void setUser(User user) {
-        this.user = user;
-    }
+    public void setAccountId(int accountId) {this.accountId = accountId;}
+    public void setEmail(String email) {this.email = email;}
+    public void setUsername(String username) {this.username = username;}
+    public void setPassword(String password) {this.password = password;}
+    public void setRole(AccountRole role) {this.role = role == null ? AccountRole.USER : role;}
+    public void setUser(User user) {this.user = user;}
 }

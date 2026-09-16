@@ -11,6 +11,11 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
 
     List<Product> findByIsDeletedFalse();
 
+    List<Product> findByIsDeletedFalseAndStatus(main.entity.Status status);
+
+    @Query("SELECT p FROM Product p LEFT JOIN FETCH p.category LEFT JOIN FETCH p.uploader")
+    List<Product> findAllWithDetails();
+
     @Query("SELECT p FROM Product p LEFT JOIN FETCH p.category LEFT JOIN FETCH p.uploader WHERE p.productId = :id")
     Optional<Product> findByIdWithDetails(@Param("id") Integer id);
 }

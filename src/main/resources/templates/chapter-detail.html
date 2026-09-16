@@ -11,6 +11,8 @@
         .reader-container { max-width: 800px; margin: 40px auto; padding: 30px; background: #1e1e1e; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.6); }
         .back-link { color: #888; text-decoration: none; display: inline-block; margin-bottom: 20px; }
         .chapter-content { font-size: 18px; line-height: 1.8; color: #dcdcdc; white-space: pre-wrap; margin-top: 20px; word-wrap: break-word; }
+        .chapter-images { display: flex; flex-direction: column; gap: 16px; margin-top: 20px; }
+        .chapter-images img { width: 100%; border-radius: 6px; display: block; }
     </style>
 </head>
 <body>
@@ -26,6 +28,11 @@
         <h3 style="color: #ffca28;" th:text="'Volume ID: ' + ${chapter.volume.volumeId}">Volume</h3>
 
         <hr style="border-color: #333;">
+
+        <!-- ẢNH MINH HỌA (nếu có) -->
+        <div class="chapter-images" th:if="${images != null and !#lists.isEmpty(images)}">
+            <img th:each="img : ${images}" th:src="${img.imageUrl}" alt="Ảnh minh họa"/>
+        </div>
 
         <!-- NỘI DUNG CHAPTER -->
         <div class="chapter-content" th:text="${chapter.context}">

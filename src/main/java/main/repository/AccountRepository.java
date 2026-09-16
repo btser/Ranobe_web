@@ -13,4 +13,6 @@ public interface AccountRepository extends JpaRepository<Account, Integer> {
     
     // Tìm account theo username để xử lý Đăng nhập
     Optional<Account> findByUsername(String username);
+
+    Optional<Account> findByUserUserId(int userId);
 }

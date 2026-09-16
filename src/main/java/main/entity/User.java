@@ -40,6 +40,7 @@ public class User {
     private boolean isDeleted = false;
     
     public boolean isDeleted() { return isDeleted;}
+    public void setDeleted(boolean deleted) { isDeleted = deleted; }
     public int getUserId() { return userId; }
     public String getUserName() { return userName; }
     public void setUserName(String userName) { this.userName = userName; }

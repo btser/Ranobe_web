@@ -1,9 +1,13 @@
 package main.entity;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.SQLRestriction;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "chapters")
+@SQLRestriction("is_deleted = false")
 public class Chapter {
 
     @Id
@@ -18,9 +22,22 @@ public class Chapter {
 
     @Column(columnDefinition = "TEXT")
     private String context;
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    @OneToMany(mappedBy = "chapter", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ChapterImage> images = new ArrayList<>();
+
+    public List<ChapterImage> getImages() { return images; }
+    public void setImages(List<ChapterImage> images) { this.images = images; }
+    public void addImage(ChapterImage image) { this.images.add(image); }
 
     @Column(name = "is_deleted")
     private boolean isDeleted = false;
+
+    @Column(name = "sort_order")
+    private int sortOrder = 0;
+
+    public int getSortOrder() { return sortOrder; }
+    public void setSortOrder(int sortOrder) { this.sortOrder = sortOrder; }
 
     private String title;
 

@@ -2,201 +2,28 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-
     <title th:text="${product?.title != null ? product.title : 'Chi Tiết Truyện'}">
         Chi Tiết Truyện
     </title>
-
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            background-color: #121212;
-            color: #e0e0e0;
-        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background-color: #121212; color: #e0e0e0; }
+        .navbar { display: flex; justify-content: space-between; align-items: center; background-color: #1e1e1e; padding: 15px 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.5); }
+        .logo { font-size: 22px; font-weight: bold; color: #4da6ff; text-decoration: none; }
+        .container { max-width: 900px; margin: 30px auto; padding: 0 20px; }
+        .detail-card { background: #1e1e1e; padding: 25px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); border-top: 4px solid #4da6ff; margin-bottom: 30px; }
+        .detail-card h1 { color: #4da6ff; margin-top: 0; }
+        .info-group { margin-bottom: 10px; font-size: 16px; }
+        .tag { background-color: #28a745; color: white; padding: 3px 8px; border-radius: 4px; font-size: 12px; }
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .volume-box { background: #1a1a1a; border: 1px solid #333; border-radius: 6px; padding: 20px; margin-bottom: 20px; }
+        .volume-title { color: #ffca28; font-weight: bold; font-size: 18px; }
+        .back-link { color: #888; text-decoration: none; display: inline-block; margin-bottom: 15px; }
 
-        .navbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background-color: #1e1e1e;
-            padding: 15px 30px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.5);
-        }
-
-        .logo {
-            font-size: 22px;
-            font-weight: bold;
-            color: #4da6ff;
-            text-decoration: none;
-        }
-
-        .container {
-            max-width: 900px;
-            margin: 30px auto;
-            padding: 0 20px;
-        }
-
-        .detail-card {
-            background: #1e1e1e;
-            padding: 25px;
-            border-radius: 8px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-            border-top: 4px solid #4da6ff;
-            margin-bottom: 30px;
-        }
-
-        .detail-card h1 {
-            color: #4da6ff;
-            margin-top: 0;
-        }
-
-        .info-group {
-            margin-bottom: 10px;
-            font-size: 16px;
-        }
-
-        .tag {
-            background-color: #28a745;
-            color: white;
-            padding: 3px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-        }
-
-        .section-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-
-        .btn-add {
-            background-color: #28a745;
-            color: white;
-            border: none;
-            padding: 8px 14px;
-            border-radius: 4px;
-            font-weight: bold;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-block;
-        }
-
-        .btn-add:hover {
-            background-color: #218838;
-        }
-
-        .btn-save {
-            background-color: #4da6ff;
-            color: white;
-            border: none;
-            padding: 7px 12px;
-            border-radius: 4px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        .btn-save:hover {
-            background-color: #2d8fe8;
-        }
-
-        .inline-form {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .title-input {
-            background: #2a2a2a;
-            border: 1px solid #444;
-            border-radius: 4px;
-            color: #fff;
-            padding: 8px 10px;
-            min-width: 220px;
-        }
-
-        .product-title-form {
-            margin: 0 0 18px;
-        }
-
-        .product-title-form .title-input {
-            min-width: min(100%, 360px);
-            font-size: 20px;
-            font-weight: bold;
-        }
-
-        .chapter-title-form {
-            margin-top: 8px;
-        }
-
-        .chapter-title-form .title-input {
-            min-width: 260px;
-        }
-
-        .volume-box {
-            background: #1a1a1a;
-            border: 1px solid #333;
-            border-radius: 6px;
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-
-        .volume-title {
-            color: #ffca28;
-            font-weight: bold;
-            font-size: 18px;
-        }
-
-        .back-link {
-            color: #888;
-            text-decoration: none;
-            display: inline-block;
-            margin-bottom: 15px;
-        }
-
-        /* =========================
-           OWNER EDIT BUTTON
-           ========================= */
-
-        .owner-actions {
-            display: flex;
-            justify-content: flex-end;
-            margin-bottom: 15px;
-        }
-
-        .btn-edit {
-            background-color: #4da6ff;
-            color: white;
-            border: none;
-            padding: 9px 14px;
-            border-radius: 5px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        .btn-edit:hover {
-            background-color: #2d8fe8;
-        }
-
-        /* Mặc định: owner vẫn nhìn giống reader */
-        .owner-edit-control {
-            display: none;
-        }
-
-        /* Khi bật edit mode mới hiện form chỉnh sửa */
-        body.edit-mode .owner-edit-control {
-            display: flex;
-        }
-
-        /* Khi edit thì ẩn text readonly tương ứng */
-        body.edit-mode .owner-readonly {
-            display: none;
-        }
+        .owner-actions { display: flex; justify-content: flex-end; margin-bottom: 15px; }
+        .btn-edit { background-color: #4da6ff; color: white; border: none; padding: 9px 14px; border-radius: 5px; font-weight: bold; cursor: pointer; text-decoration: none; display: inline-block; }
+        .btn-edit:hover { background-color: #2d8fe8; }
     </style>
 </head>
-
 <body>
 
 <nav class="navbar">
@@ -207,53 +34,20 @@
 
     <a href="/" class="back-link">← Quay lại trang chủ</a>
 
-    <!-- =========================
-         NÚT EDIT - CHỈ OWNER THẤY
-         ========================= -->
-
-    <div class="owner-actions" th:if="${isOwner}">
-        <button
-                type="button"
-                id="toggleEditBtn"
-                class="btn-edit">
+    <!-- NÚT SANG TRANG EDIT - CHỈ OWNER THẤY -->
+    <div class="owner-actions" th:if="${canManage}">
+        <a th:href="@{'/products/' + ${product.productId} + '/edit'}" class="btn-edit">
             ✏️ Chỉnh sửa
-        </button>
+        </a>
     </div>
 
-
-    <!-- =========================
-         THÔNG TIN TRUYỆN
-         ========================= -->
-
+    <!-- THÔNG TIN TRUYỆN -->
     <div class="detail-card">
-
-        <!-- Bình thường owner cũng thấy y như reader -->
-        <h1
-                class="owner-readonly"
-                th:text="${product?.title}">
-            Tên Truyện
-        </h1>
-
-        <!-- Chỉ hiện khi owner bấm Chỉnh sửa -->
-        <form
-                th:if="${isOwner}"
-                th:action="@{'/products/' + ${product.productId} + '/edit-title'}"
-                method="post"
-                class="inline-form product-title-form owner-edit-control">
-
-            <input
-                    class="title-input"
-                    type="text"
-                    name="title"
-                    th:value="${product.title}"
-                    required
-                    placeholder="Tên truyện">
-
-            <button type="submit" class="btn-save">
-                Lưu tên truyện
-            </button>
-        </form>
-
+        <img th:if="${product?.coverImage != null}"
+            th:src="${product.coverImage}"
+            alt="Ảnh bìa"
+            style="width:100%; max-height:320px; object-fit:cover; border-radius:6px; margin-bottom:15px;"/>
+        <h1 th:text="${product?.title}">Tên Truyện</h1>
 
         <div class="info-group">
             <strong>Tác giả:</strong>
@@ -267,256 +61,62 @@
 
         <div class="info-group">
             <strong>Thể loại:</strong>
-
             <span th:text="${product?.category?.categoryName != null
                     ? product.category.categoryName
-                    : 'Chưa phân loại'}">
-                -
-            </span>
+                    : 'Chưa phân loại'}">-</span>
         </div>
 
         <div class="info-group">
             <strong>Người đăng:</strong>
-
             <span th:text="${product?.uploader?.userName != null
                     ? product.uploader.userName
-                    : 'Ẩn danh'}">
-                -
-            </span>
+                    : 'Ẩn danh'}">-</span>
         </div>
 
         <div class="info-group">
             <strong>Trạng thái:</strong>
+            <span class="tag" th:text="${product?.status}">PUBLIC</span>
+        </div>
+    </div>
 
-            <span
-                    class="tag"
-                    th:text="${product?.status}">
-                PUBLIC
+    <!-- DANH SÁCH VOLUME -->
+    <div class="section-header">
+        <h2>Danh Sách Tập</h2>
+    </div>
+
+    <div th:each="vol, iterStat : ${volumes}" class="volume-box">
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 10px;">
+            <img th:if="${vol.coverImage != null}" th:src="${vol.coverImage}" alt="Bìa tập"
+                style="width:44px; height:60px; object-fit:cover; border-radius:4px; flex-shrink:0;"/>
+            <span class="volume-title"
+                  th:text="${!#strings.isEmpty(vol.title) ? vol.title : 'Tập ' + iterStat.count}">
+                Tập 1
             </span>
         </div>
 
-    </div>
-
-
-    <!-- =========================
-         DANH SÁCH VOLUME
-         ========================= -->
-
-    <div class="section-header">
-
-        <h2>Danh Sách Tập</h2>
-
-        <!-- Chỉ hiện khi EDIT MODE -->
-        <form
-                th:if="${isOwner}"
-                th:action="@{'/products/' + ${product.productId} + '/add-volume'}"
-                method="post"
-                class="inline-form owner-edit-control">
-
-            <input
-                    class="title-input"
-                    type="text"
-                    name="title"
-                    placeholder="Tên volume mới">
-
-            <button type="submit" class="btn-add">
-                + Thêm Volume Mới
-            </button>
-
-        </form>
-
-    </div>
-
-
-    <!-- =========================
-         VOLUME + CHAPTER
-         ========================= -->
-
-    <div
-            th:each="vol, iterStat : ${volumes}"
-            class="volume-box">
-
-        <!-- HEADER VOLUME -->
-        <div style="
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                margin-bottom: 15px;
-                border-bottom: 1px solid #333;
-                padding-bottom: 10px;
-        ">
-
-            <!-- Read mode -->
-            <div class="volume-title owner-readonly">
-
-                <span
-                        th:text="${!#strings.isEmpty(vol.title)
-                        ? vol.title
-                        : 'Tập ' + iterStat.count}">
-                    Tập 1
-                </span>
-
-            </div>
-
-
-            <!-- Edit volume title -->
-            <form
-                    th:if="${isOwner}"
-                    th:action="@{'/products/volume/' + ${vol.volumeId} + '/edit-title'}"
-                    method="post"
-                    class="inline-form owner-edit-control">
-
-                <input
-                        class="title-input"
-                        type="text"
-                        name="title"
-                        th:value="${vol.title}"
-                        th:placeholder="'Tập ' + ${iterStat.count}">
-
-                <button type="submit" class="btn-save">
-                    Lưu
-                </button>
-
-            </form>
-
-
-            <!-- Add chapter -->
-            <a
-                    th:if="${isOwner}"
-                    th:href="@{'/products/volume/' + ${vol.volumeId} + '/add-chapter'}"
-                    class="btn-add owner-edit-control"
-                    style="font-size: 13px;">
-
-                + Thêm Chapter
-
-            </a>
-
-        </div>
-
-
-        <!-- =========================
-             DANH SÁCH CHAPTER
-             ========================= -->
-
-        <ul style="
-                list-style: none;
-                padding-left: 0;
-                margin: 0;
-        ">
-
-            <li
-                    th:each="chap, chapStat : ${vol?.chapters}"
-                    style="margin-bottom: 10px;">
-
+        <ul style="list-style: none; padding-left: 0; margin: 0;">
+            <li th:each="chap, chapStat : ${vol?.chapters}" style="margin-bottom: 10px;">
                 📄
-
-                <a
-                        th:href="@{'/products/chapter/' + ${chap.chapterId}}"
-                        th:text="${!#strings.isEmpty(chap.title)
-                        ? chap.title
-                        : 'Chương ' + chapStat.count}"
-                        style="
-                            color: #4da6ff;
-                            text-decoration: none;
-                            font-weight: bold;
-                            font-size: 15px;
-                        ">
+                <a th:href="@{'/products/chapter/' + ${chap.chapterId}}"
+                   th:text="${!#strings.isEmpty(chap.title) ? chap.title : 'Chương ' + chapStat.count}"
+                   style="color: #4da6ff; text-decoration: none; font-weight: bold; font-size: 15px;">
                     Chương 1
                 </a>
-
-
-                <!-- Edit chapter title -->
-                <form
-                        th:if="${isOwner}"
-                        th:action="@{'/products/chapter/' + ${chap.chapterId} + '/edit-title'}"
-                        method="post"
-                        class="inline-form chapter-title-form owner-edit-control">
-
-                    <input
-                            class="title-input"
-                            type="text"
-                            name="title"
-                            th:value="${chap.title}"
-                            th:placeholder="'Chương ' + ${chapStat.count}"
-                            required>
-
-                    <button type="submit" class="btn-save">
-                        Lưu tên chương
-                    </button>
-
-                </form>
-
             </li>
-
         </ul>
 
-
-        <!-- Không có chapter -->
-        <div
-                th:if="${vol?.chapters == null or #lists.isEmpty(vol.chapters)}"
-                style="
-                    color: #aaa;
-                    font-style: italic;
-                    margin-top: 5px;
-                ">
-
+        <div th:if="${vol?.chapters == null or #lists.isEmpty(vol.chapters)}"
+             style="color: #aaa; font-style: italic; margin-top: 5px;">
             Chưa có chapter nào trong tập này.
-
         </div>
-
     </div>
 
-
-    <!-- Không có volume -->
-    <div
-            th:if="${volumes == null or #lists.isEmpty(volumes)}"
-            style="
-                color: #888;
-                font-style: italic;
-                text-align: center;
-                margin-top: 20px;
-            ">
-
+    <div th:if="${volumes == null or #lists.isEmpty(volumes)}"
+         style="color: #888; font-style: italic; text-align: center; margin-top: 20px;">
         Bộ truyện này chưa có Volume nào.
-
     </div>
 
 </div>
-
-
-<!-- =========================
-     SCRIPT BẬT/TẮT EDIT MODE
-     ========================= -->
-
-<script th:if="${isOwner}">
-
-    const toggleEditBtn =
-        document.getElementById("toggleEditBtn");
-
-    if (toggleEditBtn) {
-
-        toggleEditBtn.addEventListener("click", function () {
-
-            document.body.classList.toggle("edit-mode");
-
-            const editing =
-                document.body.classList.contains("edit-mode");
-
-            if (editing) {
-
-                toggleEditBtn.textContent =
-                    "✕ Thoát chỉnh sửa";
-
-            } else {
-
-                toggleEditBtn.textContent =
-                    "✏️ Chỉnh sửa";
-            }
-
-        });
-    }
-
-</script>
 
 </body>
 </html>

@@ -16,6 +16,9 @@ public class Product {
     private String author;
     private String artist;
 
+    @Column(name = "cover_image", columnDefinition = "TEXT")
+    private String coverImage;
+
     @Enumerated(EnumType.STRING)
     private Status status;
 
@@ -60,6 +63,7 @@ public class Product {
     public String getArtist() { return artist; }
     public Status getStatus() { return status; }
     public User getUploader() { return uploader; }
+    public String getCoverImage() { return coverImage; }
 
     public void setDeleted(boolean deleted) {isDeleted = deleted;}
     public void setAuthor(String author) {this.author = author;}
@@ -68,4 +72,5 @@ public class Product {
     public void setStatus(Status status) {this.status = status;}
     public void setUploader(User uploader) {this.uploader = uploader;}
     public void setCategory(Category category) {this.category = category;}
+    public void setCoverImage(String coverImage) { this.coverImage = coverImage; }
 }

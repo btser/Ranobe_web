@@ -24,14 +24,26 @@ public class Volume {
     @Column(name = "is_deleted")
     private boolean isDeleted = false;
 
+    @Column(name = "sort_order")
+    private int sortOrder = 0;
+
+    public int getSortOrder() { return sortOrder; }
+    public void setSortOrder(int sortOrder) { this.sortOrder = sortOrder; }
+
     private String title;
 
     public Volume() {}
-
+    
     public Volume(int volumeId, Product product) {
         this.volumeId = volumeId;
         this.product = product;
     }
+
+    @Column(name = "cover_image", columnDefinition = "TEXT")
+    private String coverImage;
+
+    public String getCoverImage() { return coverImage; }
+    public void setCoverImage(String coverImage) { this.coverImage = coverImage; }
     
     public boolean isDeleted() { return isDeleted; }
     public int getVolumeId() { return volumeId; }

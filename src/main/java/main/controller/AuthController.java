@@ -1,6 +1,7 @@
 package main.controller;
 
 import main.entity.Account;
+import main.entity.AccountRole;
 import main.entity.User;
 import main.repository.AccountRepository;
 import main.repository.UserRepository;
@@ -39,9 +40,14 @@ public class AuthController {
         Optional<Account> accountOpt = accountRepository.findByUsername(username);
 
         // Kiểm tra username và password đơn giản (sau này nâng cấp Spring Security sau)
-        if (accountOpt.isPresent() && accountOpt.get().getPassword().equals(password)) {
+        if (accountOpt.isPresent()
+                && !accountOpt.get().isDeleted()
+                && accountOpt.get().getPassword().equals(password)
+                && accountOpt.get().getUser() != null
+                && !accountOpt.get().getUser().isDeleted()) {
             // Lưu User đã đăng nhập vào Session
             session.setAttribute("loggedInUser", accountOpt.get().getUser());
+            session.setAttribute("loggedInAccount", accountOpt.get());
             return "redirect:/"; // Đăng nhập thành công về trang chủ
         }
 
@@ -65,7 +71,7 @@ public class AuthController {
     @PostMapping("/register")
     public String handleRegister (@RequestParam("username") String username, @RequestParam("email") String email, @RequestParam("password") String password, @RequestParam("userName") String displayName, Model model) {
         if (accountRepository.findByUsername(username).isPresent()) {
-            model.addAttribute ("ERROR", "Username is already exists");
+            model.addAttribute ("error", "Username is already exists");
             return "register";
         }
 
@@ -81,6 +87,7 @@ public class AuthController {
     newAccount.setUsername(username);
     newAccount.setEmail(email);
     newAccount.setPassword(password);
+    newAccount.setRole(AccountRole.USER);
     newAccount.setUser(newUser);
     accountRepository.save(newAccount);
 

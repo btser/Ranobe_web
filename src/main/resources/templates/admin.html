@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Quản trị Ranobe</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background-color: #121212; color: #e0e0e0; }
+        .navbar { display: flex; justify-content: space-between; align-items: center; background-color: #1e1e1e; padding: 15px 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.5); }
+        .logo { font-size: 22px; font-weight: bold; color: #4da6ff; text-decoration: none; }
+        .container { max-width: 1100px; margin: 30px auto; padding: 0 20px; }
+        .panel { background: #1e1e1e; border-top: 4px solid #4da6ff; border-radius: 8px; padding: 22px; margin-bottom: 24px; box-shadow: 0 4px 10px rgba(0,0,0,0.45); }
+        h1, h2 { margin-top: 0; color: #ffca28; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 11px 9px; border-bottom: 1px solid #333; text-align: left; vertical-align: middle; }
+        th { color: #aaa; font-size: 13px; text-transform: uppercase; }
+        .tag { display: inline-block; padding: 3px 8px; border-radius: 4px; background: #333; color: #ddd; font-size: 12px; font-weight: bold; }
+        .tag.ok { background: #28a745; color: #fff; }
+        .tag.danger { background: #dc3545; color: #fff; }
+        .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+        button, .link-btn { border: 0; border-radius: 4px; padding: 7px 10px; color: #fff; cursor: pointer; font-weight: bold; text-decoration: none; font-size: 13px; }
+        .primary { background: #007bff; }
+        .warning { background: #b88400; }
+        .danger { background: #dc3545; }
+        .neutral { background: #444; }
+        .back-link { color: #888; text-decoration: none; }
+    </style>
+</head>
+<body>
+<nav class="navbar">
+    <a href="/" class="logo">📚 Ranobe Kingdom</a>
+    <a href="/" class="back-link">Về trang chủ</a>
+</nav>
+
+<div class="container">
+    <h1>Quản trị nội dung</h1>
+
+    <section class="panel">
+        <h2>Tác phẩm</h2>
+        <table>
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Tên truyện</th>
+                <th>Người đăng</th>
+                <th>Trạng thái</th>
+                <th>Ẩn</th>
+                <th>Thao tác</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="product : ${products}">
+                <td th:text="${product.productId}">1</td>
+                <td>
+                    <a th:href="@{'/products/' + ${product.productId}}" th:text="${product.title}" style="color:#4da6ff; text-decoration:none;">Truyện</a>
+                </td>
+                <td th:text="${product.uploader != null ? product.uploader.userName : 'Ẩn danh'}">User</td>
+                <td><span class="tag" th:text="${product.status}">PUBLIC</span></td>
+                <td>
+                    <span th:class="${product.deleted ? 'tag danger' : 'tag ok'}"
+                          th:text="${product.deleted ? 'Đã ẩn' : 'Đang hiện'}">Đang hiện</span>
+                </td>
+                <td>
+                    <div class="actions">
+                        <form th:if="${!product.deleted}" th:action="@{'/products/' + ${product.productId} + '/hide'}" method="post"
+                              onsubmit="return confirm('Ẩn tác phẩm này khỏi danh sách public?');">
+                            <button class="warning" type="submit">Ẩn</button>
+                        </form>
+                        <form th:if="${product.deleted}" th:action="@{'/products/' + ${product.productId} + '/restore'}" method="post">
+                            <button class="primary" type="submit">Khôi phục</button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="panel">
+        <h2>Tài khoản</h2>
+        <table>
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Username</th>
+                <th>Email</th>
+                <th>Vai trò</th>
+                <th>Tình trạng</th>
+                <th>Thao tác</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="account : ${accounts}">
+                <td th:text="${account.accountId}">1</td>
+                <td th:text="${account.username}">username</td>
+                <td th:text="${account.email}">email</td>
+                <td><span class="tag" th:text="${account.role}">USER</span></td>
+                <td>
+                    <span th:class="${account.deleted ? 'tag danger' : 'tag ok'}"
+                          th:text="${account.deleted ? 'Bị ban' : 'Hoạt động'}">Hoạt động</span>
+                </td>
+                <td>
+                    <div class="actions" th:if="${account.accountId != currentAccount.accountId}">
+                        <form th:if="${isAdmin and account.role.name() == 'USER'}" th:action="@{'/admin/accounts/' + ${account.accountId} + '/make-mod'}" method="post">
+                            <button class="primary" type="submit">Cấp mod</button>
+                        </form>
+                        <form th:if="${isAdmin and account.role.name() == 'MOD'}" th:action="@{'/admin/accounts/' + ${account.accountId} + '/remove-mod'}" method="post">
+                            <button class="neutral" type="submit">Gỡ mod</button>
+                        </form>
+                        <form th:if="${!account.deleted and (isAdmin or account.role.name() == 'USER')}" th:action="@{'/admin/accounts/' + ${account.accountId} + '/ban'}" method="post"
+                              onsubmit="return confirm('Ban tài khoản này?');">
+                            <button class="danger" type="submit">Ban</button>
+                        </form>
+                        <form th:if="${account.deleted and (isAdmin or account.role.name() == 'USER')}" th:action="@{'/admin/accounts/' + ${account.accountId} + '/unban'}" method="post">
+                            <button class="primary" type="submit">Mở ban</button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </section>
+</div>
+</body>
+</html>
