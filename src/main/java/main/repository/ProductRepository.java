@@ -32,4 +32,9 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
     @Transactional
     @Query("UPDATE Product p SET p.updatedAt = :now WHERE p.productId = :id")
     void touch(@Param("id") int id, @Param("now") LocalDateTime now);
+
+    @Query("SELECT p FROM Product p LEFT JOIN FETCH p.category " +
+           "WHERE p.uploader.userId = :userId AND p.isDeleted = false " +
+           "ORDER BY p.updatedAt DESC NULLS LAST, p.productId DESC")
+    List<Product> findByUploaderLatestFirst(@Param("userId") int userId);
 }

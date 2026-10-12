@@ -26,6 +26,9 @@ public class User {
     @Column(columnDefinition = "TEXT")
     private String introduce;
 
+    @Column(name = "cover_url", columnDefinition = "TEXT")
+    private String coverUrl;
+
     public User() {}
 
     public User(String userName, String avatarUrl, Date birth, String hobby, String introduce) {
@@ -40,29 +43,21 @@ public class User {
     private boolean isDeleted = false;
     
     public boolean isDeleted() { return isDeleted;}
-    public void setDeleted(boolean deleted) { isDeleted = deleted; }
     public int getUserId() { return userId; }
     public String getUserName() { return userName; }
-    public void setUserName(String userName) { this.userName = userName; }
     public String getAvatarUrl() { return avatarUrl; }
-    public void setAvatarUrl(String avatarUrl) { this.avatarUrl = avatarUrl; }
     public Date getBirth() { return birth; }
     public String getHobby() { return hobby; }
     public String getIntroduce() { return introduce; }
+    public String getCoverUrl() { return coverUrl; }
 
-    public void setUserId(int userId) {
-        this.userId = userId;
-    }
 
-    public void setBirth(Date birth) {
-        this.birth = birth;
-    }
-
-    public void setHobby(String hobby) {
-        this.hobby = hobby;
-    }
-
-    public void setIntroduce(String introduce) {
-        this.introduce = introduce;
-    }
+    public void setUserId(int userId) { this.userId = userId; }
+    public void setBirth(Date birth) { this.birth = birth; }
+    public void setHobby(String hobby) { this.hobby = hobby; }
+    public void setIntroduce(String introduce) { this.introduce = introduce; }
+    public void setCoverUrl(String coverUrl) { this.coverUrl = coverUrl; }
+    public void setAvatarUrl(String avatarUrl) { this.avatarUrl = avatarUrl; }
+    public void setUserName(String userName) { this.userName = userName; }
+    public void setDeleted(boolean deleted) { isDeleted = deleted; }
 }

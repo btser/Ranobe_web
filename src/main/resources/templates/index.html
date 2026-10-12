@@ -30,7 +30,7 @@
         .section-head .label { color: #e0e0e0; font-weight: bold; font-size: 18px; text-transform: uppercase; }
 
         /* Đổi tỉ lệ ảnh bìa ở đây: 16 / 9 (ngang) hoặc 2 / 3 (dọc như ảnh mẫu) */
-        :root { --cover-ratio: 9 / 16; }
+        :root { --cover-ratio: 2/3; }
 
         .grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 26px 20px; }
         .novel-card { display: block; text-decoration: none; color: inherit; }
@@ -61,7 +61,8 @@
 
             <!-- Nút hiển thị khi ĐÃ đăng nhập -->
             <th:block th:if="${user != null}">
-                <span>Xin chào, <span class="user-name" th:text="${user.userName}">Admin</span>!</span>
+                <span>Xin chào, <a th:href="@{'/users/' + ${user.userId}}" class="user-name" style="text-decoration:none;" th:text="${user.userName}">Admin</a>!</span>
+                
                 <a th:if="${isStaff}" href="/admin" class="btn btn-login">Quản trị</a>
                 <a href="/products/add" class="btn btn-add">+ Đăng Truyện</a>
                 <a href="/logout" class="btn btn-logout">Đăng Xuất</a>

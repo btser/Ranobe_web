@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Chỉnh sửa hồ sơ</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background: #121212; color: #e0e0e0; }
+        a { color: #4da6ff; text-decoration: none; }
+        .wrap { max-width: 720px; margin: 30px auto; padding: 0 16px; }
+        .card { background: #1a1a1a; border: 1px solid #2c2c2c; border-radius: 6px; padding: 20px; }
+        h1 { margin-top: 0; font-size: 22px; }
+        .form-group { margin-bottom: 16px; }
+        label { display: block; margin-bottom: 6px; font-weight: 600; }
+        input[type=text], input[type=date], textarea {
+            width: 100%; box-sizing: border-box; padding: 9px 10px; background: #2a2a2a; color: #e0e0e0;
+            border: 1px solid #3a3a3a; border-radius: 4px; font-family: inherit; font-size: 14px; }
+        textarea { min-height: 110px; resize: vertical; }
+
+        .banner-prev { height: 150px; border-radius: 4px; overflow: hidden; background: linear-gradient(135deg, #243b55, #141e30 60%, #3a2a55); margin-bottom: 8px; }
+        .banner-prev img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .avatar-prev { width: 96px; height: 96px; border-radius: 50%; overflow: hidden; background: #3b82f6; color: #fff;
+                       display: flex; align-items: center; justify-content: center; font-size: 38px; font-weight: bold;
+                       position: relative; margin-bottom: 8px; }
+        .avatar-prev img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+        .check { display: flex; align-items: center; gap: 6px; margin-top: 6px; font-weight: normal; color: #ff8a8a; }
+
+        .actions { display: flex; gap: 10px; margin-top: 8px; }
+        .btn { padding: 9px 18px; border-radius: 4px; border: none; font-weight: bold; cursor: pointer; font-size: 14px; }
+        .btn-save { background: #28a745; color: #fff; }
+        .btn-cancel { background: #3a3a3a; color: #e0e0e0; display: inline-block; }
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <p><a th:href="@{'/users/' + ${profileUser.userId}}">← Về hồ sơ</a></p>
+
+    <div class="card">
+        <h1>Chỉnh sửa hồ sơ</h1>
+
+        <form th:action="@{/profile/edit}" method="post" enctype="multipart/form-data">
+
+            <div class="form-group">
+                <label>Ảnh bìa</label>
+                <div class="banner-prev">
+                    <img id="coverPrev" th:if="${!#strings.isEmpty(profileUser.coverUrl)}"
+                         th:src="${profileUser.coverUrl}" alt="" onerror="this.remove()"/>
+                </div>
+                <input type="file" name="coverFile" accept="image/*" id="coverInput">
+                <label class="check" th:if="${!#strings.isEmpty(profileUser.coverUrl)}">
+                    <input type="checkbox" name="removeCover" value="true"> Gỡ ảnh bìa
+                </label>
+            </div>
+
+            <div class="form-group">
+                <label>Ảnh đại diện</label>
+                <div class="avatar-prev" id="avatarBox">
+                    <span th:text="${!#strings.isEmpty(profileUser.userName) ? #strings.substring(profileUser.userName, 0, 1).toUpperCase() : '?'}">T</span>
+                    <img id="avatarPrev" th:if="${!#strings.isEmpty(profileUser.avatarUrl)}"
+                         th:src="${profileUser.avatarUrl}" alt="" onerror="this.remove()"/>
+                </div>
+                <input type="file" name="avatarFile" accept="image/*" id="avatarInput">
+                <label class="check" th:if="${!#strings.isEmpty(profileUser.avatarUrl)}">
+                    <input type="checkbox" name="removeAvatar" value="true"> Gỡ ảnh đại diện
+                </label>
+            </div>
+
+            <div class="form-group">
+                <label>Tên hiển thị</label>
+                <input type="text" name="userName" th:value="${profileUser.userName}" maxlength="100" required>
+            </div>
+
+            <div class="form-group">
+                <label>Giới thiệu</label>
+                <textarea name="introduce" th:text="${profileUser.introduce}"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Sở thích</label>
+                <input type="text" name="hobby" th:value="${profileUser.hobby}">
+            </div>
+
+            <div class="form-group">
+                <label>Ngày sinh</label>
+                <input type="date" name="birth"
+                       th:value="${profileUser.birth != null ? #dates.format(profileUser.birth, 'yyyy-MM-dd') : ''}">
+            </div>
+
+            <div class="actions">
+                <button type="submit" class="btn btn-save">💾 Lưu hồ sơ</button>
+                <a th:href="@{'/users/' + ${profileUser.userId}}" class="btn btn-cancel">Hủy</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Xem trước ảnh vừa chọn
+    function preview(inputId, boxSelector, imgId) {
+        document.getElementById(inputId).addEventListener('change', function () {
+            const file = this.files && this.files[0];
+            if (!file) return;
+            const box = document.querySelector(boxSelector);
+            let img = document.getElementById(imgId);
+            if (!img) {
+                img = document.createElement('img');
+                img.id = imgId;
+                box.appendChild(img);
+            }
+            img.src = URL.createObjectURL(file);
+        });
+    }
+    preview('coverInput', '.banner-prev', 'coverPrev');
+    preview('avatarInput', '#avatarBox', 'avatarPrev');
+</script>
+</body>
+</html>
