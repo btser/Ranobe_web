@@ -3,6 +3,7 @@ package main.entity;
 import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "products")
@@ -18,6 +19,9 @@ public class Product {
 
     @Column(name = "cover_image", columnDefinition = "TEXT")
     private String coverImage;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 
     @Enumerated(EnumType.STRING)
     private Status status;
@@ -64,7 +68,10 @@ public class Product {
     public Status getStatus() { return status; }
     public User getUploader() { return uploader; }
     public String getCoverImage() { return coverImage; }
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
 
+
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
     public void setDeleted(boolean deleted) {isDeleted = deleted;}
     public void setAuthor(String author) {this.author = author;}
     public void setTitle(String title) {this.title = title;}

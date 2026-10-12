@@ -16,7 +16,8 @@ import main.repository.ProductRepository;
 import main.repository.AccountRepository;
 import main.repository.VolumeRepository;
 import main.service.LocalImageStorageService;
-import main.service.TelegramUploadService;
+import main.service.R2StorageService;
+import java.time.LocalDateTime;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -41,7 +42,7 @@ public class ProductController {
     private final ChapterRepository chapterRepository;
     private final ChapterImageRepository chapterImageRepository;
     private final LocalImageStorageService localImageStorageService;
-    private final TelegramUploadService telegramUploadService;
+    private final R2StorageService r2StorageService;
 
     public ProductController(ProductRepository productRepository,
                              CategoryRepository categoryRepository,
@@ -50,7 +51,7 @@ public class ProductController {
                              ChapterRepository chapterRepository,
                              ChapterImageRepository chapterImageRepository,
                              LocalImageStorageService localImageStorageService,
-                             TelegramUploadService telegramUploadService) {
+                             R2StorageService r2StorageService) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
         this.accountRepository = accountRepository;
@@ -58,7 +59,7 @@ public class ProductController {
         this.chapterRepository = chapterRepository;
         this.chapterImageRepository = chapterImageRepository;
         this.localImageStorageService = localImageStorageService;
-        this.telegramUploadService = telegramUploadService;
+        this.r2StorageService = r2StorageService;
     }
 
     // ============== ADD PRODUCT ==============
@@ -94,6 +95,7 @@ public class ProductController {
         }
 
         product.setUploader(currentUser);
+        product.setUpdatedAt(LocalDateTime.now());
         productRepository.save(product);
 
         return "redirect:/";
@@ -119,7 +121,7 @@ public class ProductController {
         model.addAttribute("volumes", volumes);
         model.addAttribute("user", currentUser);
         model.addAttribute("isOwner", isOwner(currentUser, product));
-        model.addAttribute("canManage", canManageProduct(currentUser, product));
+        model.addAttribute("canManage", canEditProduct(currentUser, product));
         model.addAttribute("isStaff", canModerate(currentUser));
 
         return "product-detail";
@@ -135,7 +137,7 @@ public class ProductController {
         }
 
         User currentUser = (User) session.getAttribute("loggedInUser");
-        if (!canManageProduct(currentUser, product)) {
+        if (!canEditProduct(currentUser, product)) {
             return "redirect:/products/" + productId;
         }
 
@@ -158,7 +160,7 @@ public class ProductController {
             User currentUser = (User) session.getAttribute("loggedInUser");
             Product product = productRepository.findByIdWithDetails(productId).orElse(null);
 
-            if (canManageProduct(currentUser, product)) {
+            if (canEditProduct(currentUser, product)) {
                 String cleanTitle = cleanTitle(title);
                 if (cleanTitle != null) {
                     product.setTitle(cleanTitle);
@@ -182,7 +184,7 @@ public class ProductController {
             User currentUser = (User) session.getAttribute("loggedInUser");
             Product product = productRepository.findByIdWithDetails(productId).orElse(null);
 
-            if (canManageProduct(currentUser, product)) {
+            if (canEditProduct(currentUser, product)) {
                 String cleanTitle = cleanTitle(title);
                 if (cleanTitle != null) {
                     product.setTitle(cleanTitle);
@@ -210,7 +212,7 @@ public class ProductController {
             User currentUser = (User) session.getAttribute("loggedInUser");
             Product product = productRepository.findByIdWithDetails(productId).orElse(null);
 
-            if (canManageProduct(currentUser, product)) {
+            if (canEditProduct(currentUser, product)) {
                 Volume newVolume = new Volume();
                 newVolume.setProduct(product);
                 newVolume.setTitle(cleanTitle(title));
@@ -266,7 +268,7 @@ public class ProductController {
             User currentUser = (User) session.getAttribute("loggedInUser");
             Product product = productRepository.findByIdWithDetails(productId).orElse(null);
 
-            if (!canManageProduct(currentUser, product)) {
+            if (!canEditProduct(currentUser, product)) {
                 result.put("success", false);
                 return result;
             }
@@ -305,6 +307,7 @@ public class ProductController {
             if (canManageVolume(currentUser, volume) && coverFile != null && !coverFile.isEmpty()) {
                     String imageUrl = uploadImage(coverFile, "covers");
                 if (imageUrl != null) {
+                    deleteImage(volume.getCoverImage());
                     volume.setCoverImage(imageUrl);
                     volumeRepository.save(volume);
                 }
@@ -312,6 +315,58 @@ public class ProductController {
             }
 
             return "redirect:/";
+    }
+
+        // Gỡ ảnh bìa volume
+    @PostMapping("/volume/{volumeId}/cover/remove")
+    public String removeVolumeCover(@PathVariable("volumeId") int volumeId, HttpSession session) {
+        User currentUser = (User) session.getAttribute("loggedInUser");
+        Volume volume = volumeRepository.findByIdWithProductUploader(volumeId).orElse(null);
+
+        if (canManageVolume(currentUser, volume)) {
+            deleteImage(volume.getCoverImage());
+            volume.setCoverImage(null);
+            volumeRepository.save(volume);
+            return "redirect:/products/" + volume.getProduct().getProductId() + "/edit";
+        }
+        return "redirect:/";
+    }
+
+    // Đổi ảnh bìa truyện
+    @PostMapping("/{id}/cover")
+    public String uploadProductCover(@PathVariable("id") Integer productId,
+        @RequestParam("coverFile") MultipartFile coverFile, HttpSession session) {
+
+        User currentUser = (User) session.getAttribute("loggedInUser");
+        Product product = productRepository.findByIdWithDetails(productId).orElse(null);
+
+        if (canEditProduct(currentUser, product)) {
+            if (coverFile != null && !coverFile.isEmpty()) {
+                String imageUrl = uploadImage(coverFile, "covers");
+                if (imageUrl != null) {
+                    deleteImage(product.getCoverImage());
+                    product.setCoverImage(imageUrl);
+                    productRepository.save(product);
+                }
+            }
+            return "redirect:/products/" + productId + "/edit";
+        }
+        return "redirect:/";
+    }
+
+    // Gỡ ảnh bìa truyện (quay về ảnh mặc định)
+    @PostMapping("/{id}/cover/remove")
+    public String removeProductCover(@PathVariable("id") Integer productId, HttpSession session) {
+        User currentUser = (User) session.getAttribute("loggedInUser");
+        Product product = productRepository.findByIdWithDetails(productId).orElse(null);
+
+        if (canEditProduct(currentUser, product)) {
+            deleteImage(product.getCoverImage());
+            product.setCoverImage(null);
+            productRepository.save(product);
+            return "redirect:/products/" + productId + "/edit";
+        }
+        return "redirect:/";
     }
 
     // ============== CHAPTER ==============
@@ -349,6 +404,7 @@ public class ProductController {
                 chapter.setSortOrder(maxOrder + 1);
 
                 chapterRepository.save(chapter);
+                touchProduct(volume.getProduct().getProductId());
 
                 return "redirect:/products/" + volume.getProduct().getProductId() + "/edit";
             }
@@ -412,6 +468,7 @@ public class ProductController {
             }
             chapter.setContext(context);
             chapterRepository.save(chapter);
+            touchProduct(chapter.getVolume().getProduct().getProductId());
 
             return "redirect:/products/" + chapter.getVolume().getProduct().getProductId() + "/edit";
     }
@@ -613,8 +670,12 @@ public class ProductController {
 
     // ============== HELPERS ==============
 
-    private boolean canManageProduct(User currentUser, Product product) {
-        return isOwner(currentUser, product) || canModerate(currentUser);
+    private boolean canManageProduct(User currentUser, Product product) {       // Only mod or admin can manage product
+        return canModerate(currentUser);
+    }
+
+    private boolean canEditProduct(User currentUser, Product product) {         // Only owner can edit product
+        return isOwner(currentUser, product);
     }
 
     private boolean isOwner(User currentUser, Product product) {
@@ -623,7 +684,7 @@ public class ProductController {
     }
 
     private boolean canManageVolume(User currentUser, Volume volume) {
-        return volume != null && canManageProduct(currentUser, volume.getProduct());
+        return volume != null && canEditProduct(currentUser, volume.getProduct());
     }
 
     private boolean canModerate(User currentUser) {
@@ -639,7 +700,7 @@ public class ProductController {
     }
 
     private String uploadImage(MultipartFile imageFile, String folder) {
-        String imageUrl = telegramUploadService.uploadImage(imageFile);
+        String imageUrl = r2StorageService.uploadImage(imageFile, folder);
         if (imageUrl != null) {
             return imageUrl;
         }
@@ -648,6 +709,14 @@ public class ProductController {
         } catch (Exception e) {
             return null;
         }
+    }
+
+    private void deleteImage(String url) {
+        r2StorageService.deleteByUrl(url);
+    }
+
+    private void touchProduct(int productId) {
+        productRepository.touch(productId, LocalDateTime.now());
     }
 
     private String cleanTitle(String title) {

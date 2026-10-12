@@ -23,6 +23,13 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
+
+        for (Account acc : accountRepository.findAll()) {
+            if (acc.getRole() == null) {
+                acc.setRole(AccountRole.USER);
+                accountRepository.save(acc);
+            }
+        }
         accountRepository.findByUsername("admin").ifPresentOrElse(account -> {
             account.setRole(AccountRole.ADMIN);
             account.setDeleted(false);

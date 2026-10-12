@@ -19,33 +19,33 @@
 <body>
 
     <div class="card">
-        <h2>Đăng Ký Tài Khoản</h2>
+        <h2>Register</h2>
         
         <div th:if="${error}" class="error-msg" th:text="${error}"></div>
 
         <form th:action="@{/register}" method="post">
             <div class="form-group">
-                <label>Tên hiển thị (Họ & Tên):</label>
+                <label>Tên hiển thị:</label>
                 <input type="text" name="userName" required placeholder=""/>
             </div>
 
             <div class="form-group">
-                <label>Email:</label>
-                <input type="email" name="email" required placeholder="nhap@email.com..."/>
+                <label>Gmail:</label>
+                <input type="gmail" name="gmail" required placeholder="@gmail.com"/>
             </div>
 
             <div class="form-group">
-                <label>Tên đăng nhập (Username):</label>
-                <input type="text" name="username" required placeholder="Nhập username..."/>
+                <label>Username:</label>
+                <input type="text" name="username" required placeholder=""/>
             </div>
 
             <div class="form-group">
-                <label>Mật khẩu:</label>
-                <input type="password" name="password" required placeholder="Nhập mật khẩu..."/>
+                <label>Password:</label>
+                <input type="password" name="password" required placeholder=""/>
             </div>
 
-            <button type="submit">Đăng Ký Mới</button>
-            <a href="/login" class="link">Đã có tài khoản? Đăng nhập ngay</a>
+            <button type="submit">Submit</button>
+            <a href="/login" class="link">I already have an account</a>
         </form>
     </div>
 

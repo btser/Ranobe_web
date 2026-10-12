@@ -20,4 +20,9 @@ public interface ChapterRepository extends JpaRepository<Chapter, Integer> {
 
     @Query("SELECT COALESCE(MAX(c.sortOrder), -1) FROM Chapter c WHERE c.volume.volumeId = :volumeId")
     Integer findMaxSortOrderByVolumeId(@Param("volumeId") int volumeId);
+
+    @Query("SELECT c FROM Chapter c JOIN FETCH c.volume v JOIN FETCH v.product p " +
+           "WHERE c.chapterId IN (SELECT MAX(c2.chapterId) FROM Chapter c2 " +
+           "WHERE c2.volume.isDeleted = false GROUP BY c2.volume.product.productId)")
+    List<Chapter> findLatestChapterOfEachProduct();
 }
