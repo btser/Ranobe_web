@@ -40,26 +40,26 @@
 
         <form th:action="@{/profile/edit}" method="post" enctype="multipart/form-data">
 
-            <div class="form-group">
+            <div class="form-group" data-paste-zone>
                 <label>Ảnh bìa</label>
                 <div class="banner-prev">
                     <img id="coverPrev" th:if="${!#strings.isEmpty(profileUser.coverUrl)}"
                          th:src="${profileUser.coverUrl}" alt="" onerror="this.remove()"/>
                 </div>
-                <input type="file" name="coverFile" accept="image/*" id="coverInput">
+                <input type="file" name="coverFile" accept="image/*" id="coverInput" data-paste data-paste-own-preview>
                 <label class="check" th:if="${!#strings.isEmpty(profileUser.coverUrl)}">
                     <input type="checkbox" name="removeCover" value="true"> Gỡ ảnh bìa
                 </label>
             </div>
 
-            <div class="form-group">
+            <div class="form-group" data-paste-zone>
                 <label>Ảnh đại diện</label>
                 <div class="avatar-prev" id="avatarBox">
                     <span th:text="${!#strings.isEmpty(profileUser.userName) ? #strings.substring(profileUser.userName, 0, 1).toUpperCase() : '?'}">T</span>
                     <img id="avatarPrev" th:if="${!#strings.isEmpty(profileUser.avatarUrl)}"
                          th:src="${profileUser.avatarUrl}" alt="" onerror="this.remove()"/>
                 </div>
-                <input type="file" name="avatarFile" accept="image/*" id="avatarInput">
+                <input type="file" name="avatarFile" accept="image/*" id="avatarInput" data-paste data-paste-own-preview>
                 <label class="check" th:if="${!#strings.isEmpty(profileUser.avatarUrl)}">
                     <input type="checkbox" name="removeAvatar" value="true"> Gỡ ảnh đại diện
                 </label>
@@ -113,5 +113,7 @@
     preview('coverInput', '.banner-prev', 'coverPrev');
     preview('avatarInput', '#avatarBox', 'avatarPrev');
 </script>
+
+<script th:src="@{/js/paste-upload.js}"></script>
 </body>
 </html>

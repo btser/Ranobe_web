@@ -42,22 +42,23 @@ public class Volume {
     @Column(name = "cover_image", columnDefinition = "TEXT")
     private String coverImage;
 
+    @Column(name = "summary", columnDefinition = "TEXT")
+    private String summary;
+
+    public String getSummary() { return summary; }
     public String getCoverImage() { return coverImage; }
-    public void setCoverImage(String coverImage) { this.coverImage = coverImage; }
-    
     public boolean isDeleted() { return isDeleted; }
     public int getVolumeId() { return volumeId; }
     public Product getProduct() { return product; }
     public List<Chapter> getChapters() { return chapters; }
     public String getTitle() { return this.title;}
 
-    public void addChapter(Chapter chapter) {
-        this.chapters.add(chapter);
-    }
-
+    public void addChapter(Chapter chapter) {this.chapters.add(chapter);}
     public void setTitle(String title) { this.title = title;}
     public void setVolumeId(int volumeId) { this.volumeId = volumeId; }
     public void setProduct(Product product) { this.product = product; }
     public void setChapters(List<Chapter> chapters) { this.chapters = chapters; }
     public void setDeleted(boolean deleted) { isDeleted = deleted; }
+    public void setCoverImage(String coverImage) { this.coverImage = coverImage; }
+    public void setSummary(String summary) { this.summary = summary; }
 }

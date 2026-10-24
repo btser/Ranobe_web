@@ -77,15 +77,20 @@ CREATE TABLE chapters (
 
 -- 9. Các cột/chức năng bổ sung cho bản quản trị và upload ảnh
 ALTER TABLE users ADD COLUMN IF NOT EXISTS is_deleted BOOLEAN DEFAULT FALSE;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS cover_url TEXT; -- ảnh bìa trang cá nhân
 
 ALTER TABLE accounts ADD COLUMN IF NOT EXISTS role VARCHAR(20) DEFAULT 'USER' NOT NULL;
 ALTER TABLE accounts ADD COLUMN IF NOT EXISTS is_deleted BOOLEAN DEFAULT FALSE;
 
 ALTER TABLE products ADD COLUMN IF NOT EXISTS cover_image TEXT;
 ALTER TABLE products ADD COLUMN IF NOT EXISTS is_deleted BOOLEAN DEFAULT FALSE;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS summary TEXT; -- tóm tắt truyện
+ALTER TABLE products ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP; -- lần cập nhật gần nhất (sắp xếp trang chủ)
+CREATE INDEX IF NOT EXISTS idx_products_updated_at ON products (updated_at DESC NULLS LAST);
 
 ALTER TABLE volumes ADD COLUMN IF NOT EXISTS title VARCHAR(255);
 ALTER TABLE volumes ADD COLUMN IF NOT EXISTS cover_image TEXT;
+ALTER TABLE volumes ADD COLUMN IF NOT EXISTS summary TEXT; -- tóm tắt tập
 ALTER TABLE volumes ADD COLUMN IF NOT EXISTS sort_order INT DEFAULT 0;
 ALTER TABLE volumes ADD COLUMN IF NOT EXISTS is_deleted BOOLEAN DEFAULT FALSE;
 

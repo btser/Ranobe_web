@@ -47,18 +47,22 @@ public class UserController {
         User viewer = (User) session.getAttribute("loggedInUser");
         User profileUser = userRepository.findById(id).orElse(null);
 
-        if (profileUser == null || profileUser.isDeleted()) {
-            return "redirect:/";
-        }
-
         boolean isOwner = viewer != null && viewer.getUserId() == profileUser.getUserId();
         boolean isStaff = isStaff(viewer);
+
+        if (profileUser == null || (profileUser.isDeleted() && !isStaff)) {
+            return "redirect:/";
+        }
 
         List<Product> products = productRepository.findByUploaderLatestFirst(id);
         if (!isOwner && !isStaff) {
             products = products.stream().filter(p -> p.getStatus() == Status.PUBLIC).toList();
         }
 
+        Account profileAccount = accountRepository.findByUserUserId(profileUser.getUserId()).orElse(null);
+
+        model.addAttribute("profileAccount", profileAccount);
+        model.addAttribute("canManageAccount", canManageAccount(viewer, profileAccount));
         model.addAttribute("profileUser", profileUser);
         model.addAttribute("products", products);
         model.addAttribute("isOwner", isOwner);
@@ -150,6 +154,40 @@ public class UserController {
         return "redirect:/users/" + user.getUserId();
     }
 
+    @PostMapping("/users/{id}/ban")
+    public String banUserFromProfile(@PathVariable("id") int userId, HttpSession session) {
+        User viewer = (User) session.getAttribute("loggedInUser");
+        Account targetAccount = accountRepository.findByUserUserId(userId).orElse(null);
+
+        if (canManageAccount(viewer, targetAccount)) {
+            targetAccount.setDeleted(true);
+            if (targetAccount.getUser() != null) {
+                targetAccount.getUser().setDeleted(true);
+                userRepository.save(targetAccount.getUser());
+            }
+            accountRepository.save(targetAccount);
+        }
+
+        return "redirect:/users/" + userId;
+    }
+
+    @PostMapping("/users/{id}/unban")
+    public String unbanUserFromProfile(@PathVariable("id") int userId, HttpSession session) {
+        User viewer = (User) session.getAttribute("loggedInUser");
+        Account targetAccount = accountRepository.findByUserUserId(userId).orElse(null);
+
+        if (canManageAccount(viewer, targetAccount)) {
+            targetAccount.setDeleted(false);
+            if (targetAccount.getUser() != null) {
+                targetAccount.getUser().setDeleted(false);
+                userRepository.save(targetAccount.getUser());
+            }
+            accountRepository.save(targetAccount);
+        }
+
+        return "redirect:/users/" + userId;
+    }
+
     // ---------- helpers ----------
 
     private boolean isStaff(User user) {
@@ -160,21 +198,31 @@ public class UserController {
         return account != null && (account.getRole() == AccountRole.ADMIN || account.getRole() == AccountRole.MOD);
     }
 
+    private boolean canManageAccount(User viewer, Account targetAccount) {
+        if (viewer == null || targetAccount == null || targetAccount.getUser() == null) {
+            return false;
+        }
+
+        Account currentAccount = accountRepository.findByUserUserId(viewer.getUserId()).orElse(null);
+        if (currentAccount == null || currentAccount.getAccountId() == targetAccount.getAccountId()) {
+            return false;
+        }
+
+        if (currentAccount.getRole() == AccountRole.ADMIN) {
+            return true;
+        }
+
+        return currentAccount.getRole() == AccountRole.MOD
+                && targetAccount.getRole() == AccountRole.USER;
+    }
+
     private boolean isImage(MultipartFile file) {
         return file != null && !file.isEmpty()
                 && file.getContentType() != null && file.getContentType().startsWith("image/");
     }
 
-    private String uploadImage(MultipartFile file, String folder) {
-        String url = r2StorageService.uploadImage(file, folder);
-        if (url != null) {
-            return url;
-        }
-        try {
-            return localImageStorageService.saveImage(file, folder);
-        } catch (Exception e) {
-            return null;
-        }
+    private String uploadImage(MultipartFile imageFile, String folder) {
+        return r2StorageService.uploadImage(imageFile, folder);
     }
 
     private void deleteImage(String url) {

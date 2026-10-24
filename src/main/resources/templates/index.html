@@ -63,7 +63,7 @@
             <th:block th:if="${user != null}">
                 <span>Xin chào, <a th:href="@{'/users/' + ${user.userId}}" class="user-name" style="text-decoration:none;" th:text="${user.userName}">Admin</a>!</span>
                 
-                <a th:if="${isStaff}" href="/admin" class="btn btn-login">Quản trị</a>
+                <a th:if="${isStaff}" href="/admin" class="btn btn-login">整理</a>
                 <a href="/products/add" class="btn btn-add">+ Đăng Truyện</a>
                 <a href="/logout" class="btn btn-logout">Đăng Xuất</a>
             </th:block>

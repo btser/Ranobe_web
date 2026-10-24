@@ -96,7 +96,7 @@
     <!-- ============== TAB: THÔNG TIN ============== -->
     <div class="tab-panel" id="tab-info">
         <div class="card">
-                    <div class="form-group">
+                <div class="form-group" data-paste-zone>
             <label>Ảnh bìa:</label>
             <img th:src="${#strings.isEmpty(product.coverImage)} ? @{/images/default-cover.webp} : ${product.coverImage}"
                     onerror="this.onerror=null;this.src='/images/default-cover.webp'"
@@ -104,7 +104,7 @@
 
             <form th:action="@{'/products/' + ${product.productId} + '/cover'}"
                     method="post" enctype="multipart/form-data" style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
-                <input type="file" name="coverFile" accept="image/*" required>
+                <input type="file" name="coverFile" accept="image/*" data-paste required>
                 <button type="submit" class="btn-save-info">Đổi ảnh bìa</button>
             </form>
 
@@ -149,13 +149,22 @@
                         </option>
                     </select>
                 </div>
-                <button type="submit" class="btn-save-info">💾 Lưu thông tin</button>
+                <div class="form-group">
+                    <label>Tóm tắt:</label>
+                    <textarea name="summary" rows="6" th:text="${product.summary}"
+                              style="width:100%; box-sizing:border-box; padding:9px 10px; background:#2a2a2a; color:#e0e0e0; border:1px solid #3a3a3a; border-radius:4px; font-family:inherit; font-size:14px; resize:vertical;"></textarea>
+                </div>
+                <button type="submit" class="btn-save-info"> Lưu thông tin</button>
             </form>
         </div>
     </div>
 
     <!-- ============== TAB: DANH SÁCH TẬP & CHƯƠNG ============== -->
     <div class="tab-panel active" id="tab-volumes">
+
+        <div th:if="${param.imported}" style="background:rgba(40,167,69,.14); color:#65d17c; border:1px solid rgba(40,167,69,.35); border-radius:5px; padding:10px 12px; margin-bottom:12px; font-weight:bold;"
+             th:text="'Đã nhập ' + ${param.imported[0]} + ' chương, ' + ${param.images[0]} + ' ảnh' + (${param.failed[0]} != '0' ? ' (' + ${param.failed[0]} + ' ảnh upload lỗi, xem terminal)' : '') + '.'"></div>
+        <div th:if="${param.importError}" style="background:rgba(220,53,69,.14); color:#ff7b88; border:1px solid rgba(220,53,69,.35); border-radius:5px; padding:10px 12px; margin-bottom:12px; font-weight:bold;">Không có chương hoặc ảnh nào để lưu.</div>
 
         <div class="dashed-box" id="showAddVolumeBtn">+ Tạo tập mới</div>
 
@@ -167,8 +176,7 @@
 
         <div id="volumeList">
             <div th:each="vol, iterStat : ${volumes}"
-                 class="volume-card" th:attr="data-volume-id=${vol.volumeId}">
-
+                class="volume-card" data-paste-zone th:attr="data-volume-id=${vol.volumeId}">
                 <div class="volume-header">
                     <span class="drag-handle" title="Kéo để sắp xếp">⠿</span>
 
@@ -202,7 +210,7 @@
 
                 <form th:action="@{'/products/volume/' + ${vol.volumeId} + '/cover'}"
                       method="post" enctype="multipart/form-data" class="cover-form">
-                    <input type="file" name="coverFile" accept="image/*" class="title-input" required>
+                    <input type="file" name="coverFile" accept="image/*" class="title-input" data-paste required>
                     <button type="submit" class="btn-add">Lưu ảnh bìa</button>
                 </form>
 
@@ -210,6 +218,9 @@
                       method="post" class="rename-form">
                     <input class="title-input" type="text" name="title" th:value="${vol.title}"
                            th:placeholder="'Tập ' + ${iterStat.count}">
+                    <textarea class="title-input" name="summary" rows="3" placeholder="Tóm tắt tập (không bắt buộc)"
+                              th:text="${vol.summary}"
+                              style="flex-basis:100%; resize:vertical; font-family:inherit;"></textarea>
                     <button type="submit" class="btn-add">Lưu</button>
                 </form>
 
@@ -218,6 +229,8 @@
                     <div class="chapter-toolbar">
                         <a th:href="@{'/products/volume/' + ${vol.volumeId} + '/add-chapter'}"
                            class="btn-toolbar">+ Thêm chương mới</a>
+                        <a th:href="@{'/products/volume/' + ${vol.volumeId} + '/import-pdf'}"
+                           class="btn-toolbar">📄 Nhập từ PDF</a>
                         <button type="button" class="btn-toolbar sort-toggle"
                                 th:attr="data-volume-id=${vol.volumeId}">⇅ Sắp xếp chương</button>
                     </div>
@@ -407,5 +420,7 @@
     }
 </script>
 
+
+    <script th:src="@{/js/paste-upload.js}"></script>
 </body>
 </html>

@@ -22,7 +22,7 @@
         <form th:action="@{/products/add}" th:object="${product}" method="post" enctype="multipart/form-data">
             <div class="form-group">
                 <label>Ảnh Bìa:</label>
-                <input type="file" name="imageFile" accept="image/*"/>
+                <input type="file" name="imageFile" accept="image/*" data-paste/>
             </div>
             
             <div class="form-group">
@@ -64,5 +64,6 @@
         </form>
     </div>
 
+    <script th:src="@{/js/paste-upload.js}"></script>
 </body>
 </html>

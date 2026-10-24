@@ -2,121 +2,226 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title th:text="${product?.title != null ? product.title : 'Chi Tiết Truyện'}">
-        Chi Tiết Truyện
-    </title>
+    <title th:text="${product?.title != null ? product.title : 'Chi tiết truyện'}">Chi tiết truyện</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background-color: #121212; color: #e0e0e0; }
-        .navbar { display: flex; justify-content: space-between; align-items: center; background-color: #1e1e1e; padding: 15px 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.5); }
-        .logo { font-size: 22px; font-weight: bold; color: #4da6ff; text-decoration: none; }
-        .container { max-width: 900px; margin: 30px auto; padding: 0 20px; }
-        .detail-card { background: #1e1e1e; padding: 25px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); border-top: 4px solid #4da6ff; margin-bottom: 30px; }
-        .detail-card h1 { color: #4da6ff; margin-top: 0; }
-        .info-group { margin-bottom: 10px; font-size: 16px; }
-        .tag { background-color: #28a745; color: white; padding: 3px 8px; border-radius: 4px; font-size: 12px; }
-        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .volume-box { background: #1a1a1a; border: 1px solid #333; border-radius: 6px; padding: 20px; margin-bottom: 20px; }
-        .volume-title { color: #ffca28; font-weight: bold; font-size: 18px; }
-        .back-link { color: #888; text-decoration: none; display: inline-block; margin-bottom: 15px; }
+        body { margin:0; font-family:'Segoe UI',Tahoma,sans-serif; background:#111; color:#f2f2f2; }
+        .navbar { background:#1b1b1b; padding:14px 28px; border-bottom:1px solid #303030; }
+        .logo { color:#fff; text-decoration:none; font-weight:800; font-size:20px; }
+        .container { max-width:1000px; margin:24px auto; padding:0 16px; }
+        .back-link { color:#aaa; text-decoration:none; display:inline-block; margin-bottom:14px; }
 
-        .owner-actions { display: flex; justify-content: flex-end; margin-bottom: 15px; }
-        .btn-edit { background-color: #4da6ff; color: white; border: none; padding: 9px 14px; border-radius: 5px; font-weight: bold; cursor: pointer; text-decoration: none; display: inline-block; }
-        .btn-edit:hover { background-color: #2d8fe8; }
+        .hero { position:relative; display:grid; grid-template-columns:180px 1fr; gap:24px; background:#1d1d1d; border:1px solid #3a3a3a; border-radius:4px; padding:14px; }
+        .cover-wrap { position:relative; }
+        .label { background:#3aa68b; color:#fff; text-align:center; padding:8px 10px; border-radius:3px; font-weight:800; margin-bottom:16px; }
+        .cover { width:170px; height:245px; object-fit:cover; background:#2a2a2a; display:block; }
+        .info h1 { margin:0 0 10px; font-size:26px; color:#fff; line-height:1.2; }
+        .tags { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
+        .tag { background:#303030; color:#fff; border-radius:999px; padding:3px 10px; font-size:12px; }
+        .line { margin:10px 0; font-size:14px; }
+        .line strong { margin-right:8px; }
+        .status { color:#fff; }
+        
+        .top-actions { position:absolute; right:14px; top:14px; display:flex; gap:8px; align-items:center; z-index:2; }
+        .top-actions form { margin:0; }
+        .edit-btn { color:#fff; text-decoration:none; font-weight:700; border:1px solid #555; padding:7px 12px; border-radius:4px; font-size:14px; background:#1d1d1d; }
+        .edit-btn:hover { background:#2a2a2a; }
+        .btn-admin { border:0; border-radius:4px; padding:8px 12px; font-weight:700; font-size:14px; color:#fff; cursor:pointer; }
+        .btn-admin.danger { background:#dc3545; }
+        .btn-admin.primary { background:#28a745; }
+
+        .actions { display:flex; gap:10px; margin-top:18px; flex-wrap:wrap; }
+        .btn { border:0; border-radius:999px; color:#fff; padding:10px 16px; font-weight:800; text-decoration:none; display:inline-block; }
+        .btn-read { background:#e84f58; }
+
+        .meta-grid { grid-column:1 / -1; display:grid; grid-template-columns:repeat(4,1fr); border-top:1px solid #2c2c2c; margin:12px -14px -14px; }
+        .meta { text-align:center; padding:13px 8px; border-right:1px solid #2c2c2c; }
+        .meta:last-child { border-right:0; }
+        .meta small { display:block; color:#9a9a9a; margin-bottom:4px; }
+        .meta b { color:#fff; }
+
+        .panel { background:#1d1d1d; border:1px solid #3a3a3a; border-radius:4px; margin-top:24px; padding:14px; }
+        .panel-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+        .panel h2 { margin:0; font-size:18px; }
+        .volume { display:grid; grid-template-columns:120px 1fr; gap:18px; margin-bottom:18px; }
+        .volume-cover { width:105px; height:150px; object-fit:cover; background:#2a2a2a; border-radius:3px; }
+        .volume-title { font-size:15px; font-weight:800; margin:2px 0 10px; color:#fff; }
+        .chapter-list { list-style:none; padding:0; margin:0; }
+        .chapter-list li { display:flex; justify-content:space-between; gap:12px; padding:7px 8px; }
+        .chapter-list li:nth-child(even) { background:#242424; }
+        .chapter-list a { color:#fff; text-decoration:none; }
+        .chapter-list a:hover { color:#4da6ff; }
+        .empty-note { color:#999; font-style:italic; padding:10px 0; }
+        .summary-box { white-space:pre-line; line-height:1.55; font-size:14px; color:#ddd; max-height:7.8em; overflow:hidden; position:relative; }
+        .summary-box.open { max-height:none; }
+        .summary-box:not(.open).long::after { content:''; position:absolute; left:0; right:0; bottom:0; height:2.5em; background:linear-gradient(to bottom, rgba(29,29,29,0), #1d1d1d); }
+        .more-btn { background:none; border:0; color:#fff; font-weight:700; cursor:pointer; padding:8px 0 0; font-size:14px; }
+        .volume-summary { font-size:13px; color:#aaa; line-height:1.5; white-space:pre-line; margin:0 0 10px;
+                          display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+
+        @media (max-width:700px) {
+            .hero { grid-template-columns:1fr; }
+            .cover { width:180px; height:255px; }
+            .meta-grid { grid-template-columns:repeat(2,1fr); }
+            .volume { grid-template-columns:1fr; }
+        }
     </style>
 </head>
 <body>
 
 <nav class="navbar">
-    <a href="/" class="logo">📚 Ranobe Kingdom</a>
+    <a href="/" class="logo">Ranobe Kingdom</a>
 </nav>
 
 <div class="container">
+    <a href="/" class="back-link">Quay lại trang chủ</a>
 
-    <a href="/" class="back-link">← Quay lại trang chủ</a>
+    <section class="hero">
+        <div class="top-actions">
+            <!-- Chủ truyện: sang trang chỉnh sửa -->
+            <a th:if="${isOwner}"
+               th:href="@{'/products/' + ${product.productId} + '/edit'}"
+               class="edit-btn">✏️ Chỉnh sửa</a>
 
-    <!-- NÚT SANG TRANG EDIT - CHỈ OWNER THẤY -->
-    <div class="owner-actions" th:if="${canManage}">
-        <a th:href="@{'/products/' + ${product.productId} + '/edit'}" class="btn-edit">
-            ✏️ Chỉnh sửa
-        </a>
-    </div>
+            <!-- Mod/Admin: ẩn hoặc khôi phục -->
+            <th:block th:if="${isStaff}">
+                <form th:if="${!product.deleted}"
+                      th:action="@{'/products/' + ${product.productId} + '/hide'}"
+                      method="post"
+                      onsubmit="return confirm('Ẩn truyện này?');">
+                    <button type="submit" class="btn-admin danger">Ẩn truyện</button>
+                </form>
 
-    <!-- THÔNG TIN TRUYỆN -->
-    <div class="detail-card">
-        <img th:if="${product?.coverImage != null}"
-            th:src="${product.coverImage}"
-            alt="Ảnh bìa"
-            style="width:100%; max-height:320px; object-fit:cover; border-radius:6px; margin-bottom:15px;"/>
-        <h1 th:text="${product?.title}">Tên Truyện</h1>
-
-        <div class="info-group">
-            <strong>Tác giả:</strong>
-            <span th:text="${product?.author}">-</span>
+                <form th:if="${product.deleted}"
+                      th:action="@{'/products/' + ${product.productId} + '/restore'}"
+                      method="post">
+                    <button type="submit" class="btn-admin primary">Khôi phục truyện</button>
+                </form>
+            </th:block>
+        </div>
+        
+        <div class="cover-wrap">
+            <div class="label">Truyện dịch</div>
+            <img class="cover"
+                 th:src="${#strings.isEmpty(product.coverImage)} ? @{/images/default-cover.webp} : ${product.coverImage}"
+                 onerror="this.onerror=null;this.src='/images/default-cover.webp'"
+                 alt="Ảnh bìa">
         </div>
 
-        <div class="info-group">
-            <strong>Họa sĩ:</strong>
-            <span th:text="${product?.artist}">-</span>
-        </div>
+        <div class="info">
+            <h1 th:text="${product.title}">Tên truyện</h1>
 
-        <div class="info-group">
-            <strong>Thể loại:</strong>
-            <span th:text="${product?.category?.categoryName != null
-                    ? product.category.categoryName
-                    : 'Chưa phân loại'}">-</span>
-        </div>
+            <div class="tags">
+                <span class="tag"
+                      th:text="${product.category != null ? product.category.categoryName : 'Chưa phân loại'}">
+                    Thể loại
+                </span>
+            </div>
 
-        <div class="info-group">
-            <strong>Người đăng:</strong>
-            <span th:text="${product?.uploader?.userName != null
-                    ? product.uploader.userName
-                    : 'Ẩn danh'}">-</span>
-        </div>
+            <div class="line">
+                <strong>Tác giả:</strong>
+                <span th:text="${!#strings.isEmpty(product.author) ? product.author : 'Chưa cập nhật'}">-</span>
+            </div>
 
-        <div class="info-group">
-            <strong>Trạng thái:</strong>
-            <span class="tag" th:text="${product?.status}">PUBLIC</span>
-        </div>
-    </div>
+            <div class="line">
+                <strong>Họa sĩ:</strong>
+                <span th:text="${!#strings.isEmpty(product.artist) ? product.artist : 'Chưa cập nhật'}">-</span>
+            </div>
 
-    <!-- DANH SÁCH VOLUME -->
-    <div class="section-header">
-        <h2>Danh Sách Tập</h2>
-    </div>
+            <div class="line">
+                <strong>Tình trạng:</strong>
+                <span class="status" th:text="${product.status}">PUBLIC</span>
+            </div>
 
-    <div th:each="vol, iterStat : ${volumes}" class="volume-box">
-        <div style="display:flex; align-items:center; gap:12px; margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 10px;">
-            <img th:if="${vol.coverImage != null}" th:src="${vol.coverImage}" alt="Bìa tập"
-                style="width:44px; height:60px; object-fit:cover; border-radius:4px; flex-shrink:0;"/>
-            <span class="volume-title"
-                  th:text="${!#strings.isEmpty(vol.title) ? vol.title : 'Tập ' + iterStat.count}">
-                Tập 1
-            </span>
-        </div>
+            <div class="line">
+                <strong>Người đăng:</strong>
+                <span th:text="${product.uploader != null ? product.uploader.userName : 'Ẩn danh'}">Ẩn danh</span>
+            </div>
 
-        <ul style="list-style: none; padding-left: 0; margin: 0;">
-            <li th:each="chap, chapStat : ${vol?.chapters}" style="margin-bottom: 10px;">
-                📄
-                <a th:href="@{'/products/chapter/' + ${chap.chapterId}}"
-                   th:text="${!#strings.isEmpty(chap.title) ? chap.title : 'Chương ' + chapStat.count}"
-                   style="color: #4da6ff; text-decoration: none; font-weight: bold; font-size: 15px;">
-                    Chương 1
+            <div class="actions" th:if="${volumes != null and !#lists.isEmpty(volumes) and !#lists.isEmpty(volumes[0].chapters)}">
+                <a class="btn btn-read"
+                   th:href="@{'/products/chapter/' + ${volumes[0].chapters[0].chapterId}}">
+                    Đọc tiếp
                 </a>
-            </li>
-        </ul>
-
-        <div th:if="${vol?.chapters == null or #lists.isEmpty(vol.chapters)}"
-             style="color: #aaa; font-style: italic; margin-top: 5px;">
-            Chưa có chapter nào trong tập này.
+            </div>
         </div>
-    </div>
 
-    <div th:if="${volumes == null or #lists.isEmpty(volumes)}"
-         style="color: #888; font-style: italic; text-align: center; margin-top: 20px;">
-        Bộ truyện này chưa có Volume nào.
-    </div>
+        <div class="meta-grid">
+            <div class="meta">
+                <small>Lần cuối</small>
+                <b th:text="${product.updatedAt != null ? #temporals.format(product.updatedAt, 'dd/MM/yyyy') : 'Chưa cập nhật'}">-</b>
+            </div>
+            <div class="meta">
+                <small>Số tập</small>
+                <b th:text="${volumes != null ? #lists.size(volumes) : 0}">0</b>
+            </div>
+            <div class="meta">
+                <small>Thể loại</small>
+                <b th:text="${product.category != null ? product.category.categoryName : '-'}">-</b>
+            </div>
+            <div class="meta">
+                <small>Trạng thái</small>
+                <b th:text="${product.status}">PUBLIC</b>
+            </div>
+        </div>
+    </section>
 
+    <section class="panel" th:if="${!#strings.isEmpty(product.summary)}">
+        <div class="panel-head"><h2>Tóm tắt</h2></div>
+        <div id="summaryBox" class="summary-box"
+             th:classappend="${#strings.length(product.summary) > 350} ? 'long'"
+             th:text="${product.summary}">Nội dung tóm tắt</div>
+        <button type="button" id="summaryMore" class="more-btn"
+                th:if="${#strings.length(product.summary) > 350}">Xem thêm</button>
+    </section>
+
+    <section class="panel">
+        <div class="panel-head">
+            <h2>Danh sách tập</h2>
+        </div>
+
+        <div th:each="vol, iterStat : ${volumes}" class="volume">
+            <img class="volume-cover"
+                 th:if="${!#strings.isEmpty(vol.coverImage)}"
+                 th:src="${vol.coverImage}"
+                 alt="Bìa tập">
+
+            <img class="volume-cover"
+                 th:if="${#strings.isEmpty(vol.coverImage)}"
+                 th:src="${#strings.isEmpty(product.coverImage)} ? @{/images/default-cover.webp} : ${product.coverImage}"
+                 alt="Bìa tập">
+
+            <div>
+                <div class="volume-title"
+                     th:text="${!#strings.isEmpty(vol.title) ? vol.title : 'Tập ' + iterStat.count}">
+                    Tập 1
+                </div>
+
+                <p class="volume-summary" th:if="${!#strings.isEmpty(vol.summary)}" th:text="${vol.summary}"></p>
+
+                <ul class="chapter-list">
+                    <li th:each="chap, chapStat : ${vol.chapters}">
+                        <a th:href="@{'/products/chapter/' + ${chap.chapterId}}"
+                           th:text="${!#strings.isEmpty(chap.title) ? chap.title : 'Chương ' + chapStat.count}">
+                            Chương
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+    </section>
 </div>
+
+<script>
+    const moreBtn = document.getElementById('summaryMore');
+    if (moreBtn) {
+        moreBtn.addEventListener('click', () => {
+            const box = document.getElementById('summaryBox');
+            const open = box.classList.toggle('open');
+            moreBtn.textContent = open ? 'Thu gọn' : 'Xem thêm';
+        });
+    }
+</script>
 
 </body>
 </html>

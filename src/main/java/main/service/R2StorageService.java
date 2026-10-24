@@ -31,11 +31,11 @@ import java.util.UUID;
 public class R2StorageService {
 
     private static final int MAX_WIDTH = 1600;
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(R2StorageService.class);
 
     private final S3Client s3;
     private final String bucket;
     private final String publicUrl;
-
     public R2StorageService(@Value("${r2.account-id}") String accountId,
                             @Value("${r2.access-key}") String accessKey,
                             @Value("${r2.secret-key}") String secretKey,
@@ -61,8 +61,17 @@ public class R2StorageService {
             if (file == null || file.isEmpty()) {
                 return null;
             }
-            byte[] bytes = file.getBytes();
             String contentType = file.getContentType() != null ? file.getContentType() : "image/jpeg";
+            return uploadBytes(file.getBytes(), contentType, folder);
+        } catch (Exception e) {
+            log.error("Upload R2 lỗi: {}", e.toString(), e);
+            return null;
+        }
+    }
+
+    /** Upload ảnh từ mảng byte (dùng cho ảnh trang PDF). Trả về URL công khai hoặc null nếu lỗi. */
+    public String uploadBytes(byte[] bytes, String contentType, String folder) {
+        try {
             String ext = extensionOf(contentType);
 
             byte[] compressed = compress(bytes, contentType);
@@ -82,7 +91,7 @@ public class R2StorageService {
                     RequestBody.fromBytes(bytes));
             return publicUrl + "/" + key;
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Upload R2 lỗi: {}", e.toString(), e);
             return null;
         }
     }

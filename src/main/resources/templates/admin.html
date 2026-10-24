@@ -60,13 +60,7 @@
                 </td>
                 <td>
                     <div class="actions">
-                        <form th:if="${!product.deleted}" th:action="@{'/products/' + ${product.productId} + '/hide'}" method="post"
-                              onsubmit="return confirm('Ẩn tác phẩm này khỏi danh sách public?');">
-                            <button class="warning" type="submit">Ẩn</button>
-                        </form>
-                        <form th:if="${product.deleted}" th:action="@{'/products/' + ${product.productId} + '/restore'}" method="post">
-                            <button class="primary" type="submit">Khôi phục</button>
-                        </form>
+
                     </div>
                 </td>
             </tr>
@@ -104,13 +98,6 @@
                         </form>
                         <form th:if="${isAdmin and account.role?.name() == 'MOD'}" th:action="@{'/admin/accounts/' + ${account.accountId} + '/remove-mod'}" method="post">
                             <button class="neutral" type="submit">Gỡ mod</button>
-                        </form>
-                        <form th:if="${!account.deleted and (isAdmin or account.role?.name() == 'USER')}" th:action="@{'/admin/accounts/' + ${account.accountId} + '/ban'}" method="post"
-                              onsubmit="return confirm('Ban tài khoản này?');">
-                            <button class="danger" type="submit">Ban</button>
-                        </form>
-                        <form th:if="${account.deleted and (isAdmin or account.role?.name() == 'USER')}" th:action="@{'/admin/accounts/' + ${account.accountId} + '/unban'}" method="post">
-                            <button class="primary" type="submit">Mở ban</button>
                         </form>
                     </div>
                 </td>

@@ -37,6 +37,9 @@ public class Product {
     @JoinColumn(name = "user_id")
     private User uploader;
 
+    @Column(name = "summary", columnDefinition = "TEXT")
+    private String summary;
+
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL)
     private List<Volume> volumes = new ArrayList<>();
 
@@ -56,8 +59,7 @@ public class Product {
         this.volumes.add(volume);
     }
 
-    
-
+    public String getSummary() { return summary; }
     public int getProductId() { return productId; }
     public String getTitle() { return title; }
     public Category getCategory() { return category; }
@@ -80,4 +82,6 @@ public class Product {
     public void setUploader(User uploader) {this.uploader = uploader;}
     public void setCategory(Category category) {this.category = category;}
     public void setCoverImage(String coverImage) { this.coverImage = coverImage; }
+    public void setSummary(String summary) { this.summary = summary; }
+
 }

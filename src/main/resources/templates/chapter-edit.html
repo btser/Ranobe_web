@@ -98,16 +98,14 @@
             </div>
 
             <form class="upload-form" th:action="@{'/products/chapter/' + ${chapter.chapterId} + '/images'}"
-                  method="post" enctype="multipart/form-data">
+                  method="post" enctype="multipart/form-data" data-paste-zone>
                 <label class="upload-drop" for="imageFiles">
                     <strong>Chọn ảnh minh họa</strong>
-                    <span>Có thể chọn nhiều ảnh cùng lúc. Sau khi thêm, kéo thả các ảnh phía trên để đổi thứ tự.</span>
+                    <span>Chọn nhiều ảnh, kéo thả vào đây hoặc dán Ctrl+V. Sau khi thêm, kéo thả các ảnh phía trên để đổi thứ tự.</span>
                 </label>
-                <input id="imageFiles" type="file" name="imageFiles" accept="image/*" multiple required>
-                <div class="preview-grid" id="previewGrid"></div>
+                <input id="imageFiles" type="file" name="imageFiles" accept="image/*" multiple required data-paste>
                 <div class="upload-actions">
-                    <span class="selected-count" id="selectedCount">Chưa chọn ảnh nào</span>
-                    <button type="submit" class="btn-upload" id="uploadBtn" disabled>+ Thêm ảnh đã chọn</button>
+                    <button type="submit" class="btn-upload">+ Thêm ảnh đã chọn</button>
                 </div>
             </form>
         </div>

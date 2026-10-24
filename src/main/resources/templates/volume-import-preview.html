@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Xem trước nhập PDF</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background: #121212; color: #e0e0e0; }
+        .navbar { background: #1e1e1e; padding: 15px 30px; box-shadow: 0 2px 8px rgba(0,0,0,.5); }
+        .logo { font-size: 22px; font-weight: bold; color: #4da6ff; text-decoration: none; }
+        .wrap { max-width: 1400px; margin: 30px auto 90px; padding: 0 16px; }
+        h2 { color: #ffca28; margin: 0 0 6px; }
+        h3 { margin: 28px 0 10px; color: #ffca28; }
+        a.back { color: #888; text-decoration: none; display: inline-block; margin-bottom: 14px; }
+        .sub { color: #aaa; margin-bottom: 14px; }
+        .box { background: #1e1e1e; border: 1px solid #333; border-radius: 8px; padding: 16px; }
+        .hint { color: #999; font-size: 13px; line-height: 1.5; }
+
+        .mode label { display: block; margin: 6px 0; cursor: pointer; }
+        .mode input[type=text] { padding: 6px 8px; background: #2a2a2a; border: 1px solid #444; border-radius: 4px; color: #fff; width: 220px; }
+
+        .tools { display: flex; gap: 8px; margin: 10px 0; }
+        .tool-btn { background: #2a2a2a; border: 1px solid #444; color: #ddd; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 13px; }
+        .img-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; }
+        .img-card { background: #252525; border: 1px solid #3a3a3a; border-radius: 6px; overflow: hidden; }
+        .img-card.off { opacity: .35; }
+        .img-card img { width: 100%; height: 170px; object-fit: contain; display: block; background: #111; }
+        .img-card .meta { padding: 6px 8px; font-size: 12px; color: #bbb; }
+        .img-card label { display: flex; gap: 6px; align-items: center; cursor: pointer; font-weight: bold; color: #ffca28; }
+        .img-card .where { color: #888; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+
+        .img-card select { margin-top: 4px; width: 100%; background: #2a2a2a; color: #ddd; border: 1px solid #444; border-radius: 4px; padding: 2px; font-size: 12px; }
+        .summary-box textarea { width: 100%; box-sizing: border-box; height: 120px; resize: vertical; background: #181818; border: 1px solid #3a3a3a;
+                                border-radius: 4px; color: #ddd; padding: 8px; line-height: 1.55; font-family: inherit; font-size: 14px; }
+        .ch { background: #1e1e1e; border: 1px solid #333; border-radius: 8px; padding: 12px; margin-bottom: 12px; }
+        .ch.off { opacity: .4; }
+        .ch-head { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
+        .ch-no { color: #888; font-weight: bold; min-width: 28px; }
+        .ch-head input[type=text] { flex: 1; min-width: 200px; padding: 7px 9px; background: #2a2a2a; border: 1px solid #444; border-radius: 4px; color: #fff; font-size: 15px; font-weight: bold; }
+        .ch-head label { font-size: 13px; color: #ccc; cursor: pointer; white-space: nowrap; }
+        .ch textarea { width: 100%; box-sizing: border-box; height: 520px; resize: vertical; background: #181818; border: 1px solid #3a3a3a;
+                       border-radius: 4px; color: #ddd; padding: 8px; line-height: 1.55; font-family: inherit; font-size: 14px; }
+        .ch .len { color: #888; font-size: 12px; margin-top: 4px; }
+
+        .bar { position: fixed; left: 0; right: 0; bottom: 0; background: #1b1b1b; border-top: 1px solid #333; padding: 12px 20px;
+               display: flex; justify-content: center; gap: 12px; align-items: center; }
+        .btn-save { background: #28a745; color: #fff; border: 0; border-radius: 4px; padding: 11px 26px; font-weight: bold; font-size: 15px; cursor: pointer; }
+        .btn-save:disabled { background: #444; cursor: wait; }
+        .btn-cancel { color: #aaa; text-decoration: none; padding: 11px 16px; }
+    </style>
+</head>
+<body>
+<nav class="navbar"><a href="/" class="logo">📚 Ranobe Kingdom</a></nav>
+
+<div class="wrap">
+    <a class="back" th:href="@{'/products/volume/' + ${volume.volumeId} + '/import-pdf'}">← Chọn lại file khác</a>
+    <h2>Xem trước nhập từ PDF</h2>
+    <div class="sub">
+        Truyện <strong style="color:#fff;" th:text="${product.title}">Truyện</strong>
+        | Tập <strong style="color:#fff;" th:text="${!#strings.isEmpty(volume.title) ? volume.title : '—'}">Tập</strong>
+        | Đã đọc <strong th:text="${pageCount}">0</strong> trang:
+        <strong th:text="${#lists.size(chapters)}">0</strong> chương,
+        <strong th:text="${#lists.size(images)}">0</strong> trang minh họa.
+    </div>
+
+    <form th:action="@{'/products/volume/' + ${volume.volumeId} + '/import-pdf/commit'}" method="post" id="commitForm">
+        <input type="hidden" name="token" th:value="${token}">
+        <input type="hidden" name="chapterCount" th:value="${#lists.size(chapters)}">
+        <input type="hidden" name="imageCount" th:value="${#lists.size(images)}">
+
+        <!-- TÓM TẮT -->
+        <h3>📝 Tóm tắt tập</h3>
+        <div class="box summary-box">
+            <textarea name="summary" placeholder="PDF không có phần tóm tắt - để trống thì giữ nguyên tóm tắt hiện tại của tập"
+                      th:text="${summary}"></textarea>
+            <div class="hint" th:if="${summary != null}">Tìm thấy tóm tắt trong PDF, sẽ ghi đè vào tóm tắt của tập này. Xóa trống nếu không muốn.</div>
+            <div class="hint" th:if="${summary == null}">Không tìm thấy phần "Tóm tắt/Giới thiệu" trong PDF. Có thể tự dán vào đây, hoặc để trống.</div>
+        </div>
+
+        <!-- ẢNH MINH HỌA -->
+        <th:block th:if="${!#lists.isEmpty(images)}">
+            <h3>🖼 Ảnh minh họa</h3>
+            <div class="box mode">
+                <label>Tên chương chứa ảnh minh họa:
+                    <input type="text" name="poolTitle" value="Minh họa"></label>
+                <div class="hint">
+                    Ảnh nào được tick sẽ vào chương này (ảnh màu trước, mục lục, rồi đen trắng).
+                    Ảnh nằm giữa nội dung truyện được chèn vào đúng vị trí giữa các đoạn văn (dòng <code>&#91;&#91;IMG:...&#93;&#93;</code> trong nội dung chương), không phụ thuộc việc tick.
+                </div>
+            </div>
+
+            <div class="tools">
+                <button type="button" class="tool-btn" id="allOn">Chọn tất cả</button>
+                <button type="button" class="tool-btn" id="allOff">Bỏ tất cả</button>
+            </div>
+
+            <div class="img-grid">
+                <div class="img-card" th:each="img, st : ${images}">
+                    <input type="hidden" th:name="'img_' + ${st.index}" th:value="${img.file}">
+                    <input type="hidden" th:name="'imgCh_' + ${st.index}" th:value="${img.chapterIndex}">
+                    <img th:src="@{'/uploads/tmp/' + ${token} + '/' + ${img.file}}" loading="lazy" alt="Minh họa">
+                    <input type="hidden" th:name="'imgKind_' + ${st.index}" th:value="${img.kindName}">
+                    <div class="meta">
+                        <label><input type="checkbox" class="imgOn" th:name="'imgOn_' + ${st.index}" checked>
+                            Vào Minh họa</label>
+                    </div>
+                </div>
+            </div>
+        </th:block>
+
+        <!-- CHƯƠNG -->
+        <h3>📖 Chương</h3>
+        <div class="hint" style="margin-bottom:10px;">
+            Sửa tên và nội dung nếu cần. Tick <strong>Bỏ</strong> để không lưu chương đó (mục lục, trang tên sách...),
+            tick <strong>Gộp lên trên</strong> nếu đoạn này thực ra là phần tiếp của chương phía trên.
+            Dòng <code>&#91;&#91;IMG:pXXX.jpg&#93;&#93;</code> là vị trí ảnh: kéo sang chỗ khác hoặc xóa dòng đó nếu không muốn. Chương quá ngắn đã được tick Bỏ sẵn. Mặc định chỉ tách chương ở các đề mục "Chương N"; "Phần 1", "Mở đầu"... nằm trong chương đó.
+        </div>
+
+        <div class="ch" th:each="c, st : ${chapters}" th:classappend="${c.skipDefault} ? 'off'">
+            <div class="ch-head">
+                <span class="ch-no" th:text="'#' + ${st.count}">#1</span>
+                <input type="text" th:name="'title_' + ${st.index}" th:value="${c.title}">
+                <label><input type="checkbox" class="skip" th:name="'skip_' + ${st.index}" th:checked="${c.skipDefault}"> Bỏ</label>
+                <label th:if="${st.index > 0}"><input type="checkbox" th:name="'merge_' + ${st.index}"> Gộp lên trên</label>
+            </div>
+            <textarea th:name="'text_' + ${st.index}" th:text="${c.text}"></textarea>
+            <div class="len">
+                Từ trang <span th:text="${c.startPage}">1</span> ·
+                <span th:text="${c.length}">0</span> ký tự
+            </div>
+        </div>
+
+        <div class="bar">
+            <a class="btn-cancel" th:href="@{'/products/' + ${product.productId} + '/edit'}">Hủy</a>
+            <button type="submit" class="btn-save" id="saveBtn">💾 Lưu vào tập</button>
+        </div>
+    </form>
+</div>
+
+<script>
+    // Làm mờ chương bị Bỏ
+    document.querySelectorAll('.ch').forEach(card => {
+        const cb = card.querySelector('.skip');
+        cb.addEventListener('change', () => card.classList.toggle('off', cb.checked));
+    });
+    // Làm mờ ảnh bị bỏ tick
+    document.querySelectorAll('.img-card').forEach(card => {
+        const cb = card.querySelector('.imgOn');
+        if (!cb) return;
+        cb.addEventListener('change', () => card.classList.toggle('off', !cb.checked));
+    });
+    const setAll = on => document.querySelectorAll('.imgOn').forEach(cb => {
+        cb.checked = on; cb.dispatchEvent(new Event('change'));
+    });
+    const allOn = document.getElementById('allOn'), allOff = document.getElementById('allOff');
+    if (allOn) allOn.addEventListener('click', () => setAll(true));
+    if (allOff) allOff.addEventListener('click', () => setAll(false));
+
+    document.getElementById('commitForm').addEventListener('submit', function () {
+        const b = document.getElementById('saveBtn');
+        b.disabled = true;
+        b.textContent = 'Đang lưu và upload ảnh...';
+    });
+</script>
+</body>
+</html>

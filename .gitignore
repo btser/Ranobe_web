@@ -3,6 +3,8 @@
 /target/
 /.mvn/
 /bin/
+/Database/
+/uploads/
 
 # hide database account
 

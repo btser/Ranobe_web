@@ -121,8 +121,9 @@ public class ProductController {
         model.addAttribute("volumes", volumes);
         model.addAttribute("user", currentUser);
         model.addAttribute("isOwner", isOwner(currentUser, product));
-        model.addAttribute("canManage", canEditProduct(currentUser, product));
         model.addAttribute("isStaff", canModerate(currentUser));
+        model.addAttribute("canEdit", canEditProduct(currentUser, product));
+        model.addAttribute("canManageProduct", canManageProduct(currentUser, product));
 
         return "product-detail";
     }
@@ -179,6 +180,7 @@ public class ProductController {
         @RequestParam(value = "artist", required = false) String artist,
         @RequestParam(value = "categoryId", required = false) Integer categoryId,
         @RequestParam(value = "status", required = false) Status status,
+        @RequestParam(value = "summary", required = false) String summary,
         HttpSession session) {
 
             User currentUser = (User) session.getAttribute("loggedInUser");
@@ -191,6 +193,7 @@ public class ProductController {
                 }
                 product.setAuthor(author);
                 product.setArtist(artist);
+                product.setSummary((summary == null || summary.isBlank()) ? null : summary.trim());
                 if (status != null) {
                     product.setStatus(status);
                 }
@@ -229,13 +232,18 @@ public class ProductController {
 
     @PostMapping("/volume/{volumeId}/edit-title")
     public String editVolumeTitle(@PathVariable("volumeId") int volumeId,
-        @RequestParam("title") String title, HttpSession session) {
+        @RequestParam("title") String title,
+        @RequestParam(value = "summary", required = false) String summary,
+        HttpSession session) {
 
             User currentUser = (User) session.getAttribute("loggedInUser");
             Volume volume = volumeRepository.findByIdWithProductUploader(volumeId).orElse(null);
 
             if (canManageVolume(currentUser, volume)) {
                 volume.setTitle(cleanTitle(title));
+                if (summary != null) { // chỉ cập nhật khi form có gửi ô tóm tắt
+                    volume.setSummary(summary.isBlank() ? null : summary.trim());
+                }
                 volumeRepository.save(volume);
                 return "redirect:/products/" + volume.getProduct().getProductId() + "/edit";
             }
@@ -639,6 +647,7 @@ public class ProductController {
 
         model.addAttribute("chapter", chapter);
         model.addAttribute("images", images);
+        model.addAttribute("blocks", main.service.ChapterContent.parse(chapter.getContext()));
         return "chapter-detail";
     }
 
@@ -700,15 +709,7 @@ public class ProductController {
     }
 
     private String uploadImage(MultipartFile imageFile, String folder) {
-        String imageUrl = r2StorageService.uploadImage(imageFile, folder);
-        if (imageUrl != null) {
-            return imageUrl;
-        }
-        try {
-            return localImageStorageService.saveImage(imageFile, folder);
-        } catch (Exception e) {
-            return null;
-        }
+        return r2StorageService.uploadImage(imageFile, folder);
     }
 
     private void deleteImage(String url) {

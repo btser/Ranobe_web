@@ -126,6 +126,21 @@
                 Truyện đã đăng
             </h2>
 
+            <div th:if="${canManageAccount}" class="admin-actions">
+                <form th:if="${profileAccount != null and !profileAccount.deleted}"
+                    th:action="@{'/users/' + ${profileUser.userId} + '/ban'}"
+                    method="post"
+                    onsubmit="return confirm('Ban tài khoản này?');">
+                    <button type="submit" class="btn btn-ban">Ban tài khoản</button>
+                </form>
+
+                <form th:if="${profileAccount != null and profileAccount.deleted}"
+                    th:action="@{'/users/' + ${profileUser.userId} + '/unban'}"
+                    method="post">
+                    <button type="submit" class="btn btn-unban">Mở ban</button>
+                </form>
+            </div>
+
             <div class="works">
                 <a class="work" th:each="p : ${products}" th:href="@{'/products/' + ${p.productId}}">
                     <div class="thumb">
