@@ -2,6 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
+    <link rel="icon" type="image/png" th:href="${siteLogoSmall}">
     <title>Trang Chủ</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background-color: #121212; color: #e0e0e0; }
@@ -9,6 +10,8 @@
         /* Navbar Header */
         .navbar { display: flex; justify-content: space-between; align-items: center; background-color: #1e1e1e; padding: 15px 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.5); }
         .logo { font-size: 22px; font-weight: bold; color: #4da6ff; text-decoration: none; }
+        .logo { display: inline-flex; align-items: center; gap: 10px; }
+        .logo img { width: 38px; height: 38px; border-radius: 10px; display: block; }
         .nav-links { display: flex; gap: 15px; align-items: center; }
         
         .btn { padding: 8px 16px; border-radius: 4px; text-decoration: none; font-weight: bold; font-size: 14px; transition: 0.2s; }
@@ -50,7 +53,7 @@
 
     <!-- NAVBAR HEADER -->
     <nav class="navbar">
-        <a href="/" class="logo">📚 Ranobe Kingdom</a>
+        <a href="/" class="logo"><img th:src="${siteLogoSmall}" alt="LN"> Ranobe Kingdom</a>
         
         <div class="nav-links">
             <!-- Nút hiển thị khi CHƯA đăng nhập -->
@@ -64,7 +67,7 @@
                 <span>Xin chào, <a th:href="@{'/users/' + ${user.userId}}" class="user-name" style="text-decoration:none;" th:text="${user.userName}">Admin</a>!</span>
                 
                 <a th:if="${isStaff}" href="/admin" class="btn btn-login">整理</a>
-                <a href="/products/add" class="btn btn-add">+ Đăng Truyện</a>
+                <a href="/truyen/add" class="btn btn-add">+ Đăng Truyện</a>
                 <a href="/logout" class="btn btn-logout">Đăng Xuất</a>
             </th:block>
         </div>
@@ -80,7 +83,7 @@
         <div class="grid-container">
             <a th:each="product : ${products}"
                th:with="lc=${latestChapters[product.productId]}"
-               th:href="@{'/products/' + ${product.productId}}" class="novel-card">
+               th:href="@{${product.path}}" class="novel-card">
 
                 <div class="cover">
                     <img th:src="${#strings.isEmpty(product.coverImage)} ? @{/images/default-cover.webp} : ${product.coverImage}"

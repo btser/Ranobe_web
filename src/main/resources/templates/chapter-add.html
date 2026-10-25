@@ -2,11 +2,14 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
+    <link rel="icon" type="image/png" th:href="${siteLogoSmall}">
     <title>Thêm Chương Mới</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background-color: #121212; color: #e0e0e0; }
         .navbar { background-color: #1e1e1e; padding: 15px 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.5); }
         .logo { font-size: 22px; font-weight: bold; color: #4da6ff; text-decoration: none; }
+        .logo { display: inline-flex; align-items: center; gap: 10px; }
+        .logo img { width: 38px; height: 38px; border-radius: 10px; display: block; }
         .form-container { max-width: 800px; margin: 40px auto; padding: 30px; background: #1e1e1e; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
         h2 { color: #4da6ff; margin-top: 0; }
         .form-group { margin-bottom: 20px; }
@@ -21,15 +24,15 @@
 <body>
 
     <nav class="navbar">
-        <a href="/" class="logo">📚 Ranobe Kingdom</a>
+        <a href="/" class="logo"><img th:src="${siteLogoSmall}" alt="LN"> Ranobe Kingdom</a>
     </nav>
 
     <div class="form-container">
-        <a th:href="@{'/products/' + ${volume.product.productId}}" class="back-link">← Hủy và quay lại</a>
+        <a th:href="@{${volume.product.path + '/edit'}}" class="back-link">← Hủy và quay lại</a>
         <h2>Đăng Chương Mới</h2>
         <p style="color: #aaa;">Bộ truyện: <strong style="color: #fff;" th:text="${volume.product.title}">Truyện</strong> | Tập: <strong style="color: #fff;" th:text="${volume.title}">Tập</strong></p>
 
-        <form th:action="@{/products/volume/{volId}/add-chapter(volId=${volume.volumeId})}" method="post">
+        <form th:action="@{${volume.product.path + '/tap/' + volume.volumeId + '/' + volume.slug + '/add-chapter'}}" method="post">
             <div class="form-group">
                 <label for="title">Tên Chương:</label>
                 <input type="text" id="title" name="title" placeholder="Ví dụ: Chương 1: Khởi đầu mới" required>

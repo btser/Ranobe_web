@@ -32,7 +32,7 @@ import java.util.List;
 import java.util.Map;
 
 @Controller
-@RequestMapping("/products")
+@RequestMapping("/truyen")
 public class ProductController {
 
     private final ProductRepository productRepository;
@@ -62,6 +62,33 @@ public class ProductController {
         this.r2StorageService = r2StorageService;
     }
 
+    /** Về trang chỉnh sửa truyện (link đẹp, cần tên truyện nên tra theo id). */
+    private String editRedirect(int productId) {
+        String title = productRepository.findById(productId).map(Product::getTitle).orElse(null);
+        return "redirect:/truyen/" + productId + "/" + main.util.Slugs.slug(title, "truyen") + "/edit";
+    }
+
+    /** Link trang sửa chương; chapter phải đã nạp kèm volume và product. */
+    private String chapterEditPath(Chapter chapter) {
+        return chapter.getVolume().getProduct().getPath() + "/chuong/" + chapter.getChapterId()
+                + "/" + chapter.getSlug() + "/edit";
+    }
+
+    /** Gắn danh sách thể loại; thể loại đầu tiên (theo thứ tự id) làm thể loại chính ở cột category_id. */
+    private void applyCategories(Product product, List<Integer> categoryIds) {
+        java.util.Set<Category> set = new java.util.LinkedHashSet<>();
+        for (Category c : categoryRepository.findAllById(categoryIds)) {
+            if (!c.isDeleted()) {
+                set.add(c);
+            }
+        }
+        if (set.isEmpty()) {
+            return;
+        }
+        product.setCategories(set);
+        product.setCategory(set.iterator().next());
+    }
+
     // ============== ADD PRODUCT ==============
 
     @GetMapping("/add")
@@ -75,7 +102,7 @@ public class ProductController {
 
     @PostMapping("/add")
     public String saveProduct(@ModelAttribute("product") Product product,
-                            @RequestParam(value = "categoryId", required = false) Integer categoryId,
+                            @RequestParam(value = "categoryIds", required = false) List<Integer> categoryIds,
                             @RequestParam(value = "imageFile", required = false) MultipartFile imageFile,
                             HttpSession session) {
 
@@ -84,10 +111,10 @@ public class ProductController {
             return "redirect:/login";
         }
 
-        if (categoryId != null) {
-            Category category = categoryRepository.findById(categoryId).orElse(null);
-            product.setCategory(category);
+        if (categoryIds == null || categoryIds.isEmpty()) {
+            return "redirect:/truyen/add";
         }
+        applyCategories(product, categoryIds);
 
         if (imageFile != null && !imageFile.isEmpty()) {
             String imageUrl = uploadImage(imageFile, "covers");
@@ -103,11 +130,15 @@ public class ProductController {
 
     // ============== PRODUCT DETAIL (READ-ONLY) ==============
 
-    @GetMapping("/{id}")
-    public String showProductDetail(@PathVariable("id") Integer productId, Model model, HttpSession session) {
+    @GetMapping("/{id}/{slug}")
+    public String showProductDetail(@PathVariable("id") Integer productId,
+                                    @PathVariable("slug") String slug, Model model, HttpSession session) {
         Product product = productRepository.findByIdWithDetails(productId).orElse(null);
         if (product == null) {
             return "redirect:/";
+        }
+        if (!product.getPath().equals("/truyen/" + productId + "/" + slug)) {
+            return "redirect:" + product.getPath(); // sai/thiếu tên trong link -> về link chuẩn
         }
 
         User currentUser = (User) session.getAttribute("loggedInUser");
@@ -130,8 +161,9 @@ public class ProductController {
 
     // ============== EDIT PAGE (OWNER ONLY) ==============
 
-    @GetMapping("/{id}/edit")
-    public String showEditProductForm(@PathVariable("id") Integer productId, Model model, HttpSession session) {
+    @GetMapping("/{id}/{slug}/edit")
+    public String showEditProductForm(@PathVariable("id") Integer productId,
+                                      @PathVariable("slug") String slug, Model model, HttpSession session) {
         Product product = productRepository.findByIdWithDetails(productId).orElse(null);
         if (product == null) {
             return "redirect:/";
@@ -139,7 +171,7 @@ public class ProductController {
 
         User currentUser = (User) session.getAttribute("loggedInUser");
         if (!canEditProduct(currentUser, product)) {
-            return "redirect:/products/" + productId;
+            return "redirect:" + product.getPath();
         }
 
         List<Volume> volumes = volumeRepository.findByProductIdWithChapters(productId);
@@ -169,7 +201,7 @@ public class ProductController {
                 }
             }
 
-            return "redirect:/products/" + productId + "/edit";
+            return editRedirect(productId);
     }
 
     // Sửa toàn bộ thông tin (tab "Thông tin")
@@ -178,7 +210,7 @@ public class ProductController {
         @RequestParam("title") String title,
         @RequestParam(value = "author", required = false) String author,
         @RequestParam(value = "artist", required = false) String artist,
-        @RequestParam(value = "categoryId", required = false) Integer categoryId,
+        @RequestParam(value = "categoryIds", required = false) List<Integer> categoryIds,
         @RequestParam(value = "status", required = false) Status status,
         @RequestParam(value = "summary", required = false) String summary,
         HttpSession session) {
@@ -197,13 +229,13 @@ public class ProductController {
                 if (status != null) {
                     product.setStatus(status);
                 }
-                if (categoryId != null) {
-                    categoryRepository.findById(categoryId).ifPresent(product::setCategory);
+                if (categoryIds != null && !categoryIds.isEmpty()) {
+                    applyCategories(product, categoryIds);
                 }
                 productRepository.save(product);
             }
 
-            return "redirect:/products/" + productId + "/edit";
+            return editRedirect(productId);
     }
 
     // ============== VOLUME ==============
@@ -227,10 +259,10 @@ public class ProductController {
                 volumeRepository.save(newVolume);
             }
 
-            return "redirect:/products/" + productId + "/edit";
+            return editRedirect(productId);
     }
 
-    @PostMapping("/volume/{volumeId}/edit-title")
+    @PostMapping("/{pid}/tap/{volumeId}/edit-title")
     public String editVolumeTitle(@PathVariable("volumeId") int volumeId,
         @RequestParam("title") String title,
         @RequestParam(value = "summary", required = false) String summary,
@@ -245,13 +277,13 @@ public class ProductController {
                     volume.setSummary(summary.isBlank() ? null : summary.trim());
                 }
                 volumeRepository.save(volume);
-                return "redirect:/products/" + volume.getProduct().getProductId() + "/edit";
+                return editRedirect(volume.getProduct().getProductId());
             }
 
             return "redirect:/";
     }
 
-    @PostMapping("/volume/{volumeId}/delete")
+    @PostMapping("/{pid}/tap/{volumeId}/delete")
     public String deleteVolume(@PathVariable("volumeId") int volumeId, HttpSession session) {
         User currentUser = (User) session.getAttribute("loggedInUser");
         Volume volume = volumeRepository.findByIdWithProductUploader(volumeId).orElse(null);
@@ -260,7 +292,7 @@ public class ProductController {
             int productId = volume.getProduct().getProductId();
             volume.setDeleted(true);
             volumeRepository.save(volume);
-            return "redirect:/products/" + productId + "/edit";
+            return editRedirect(productId);
         }
 
         return "redirect:/";
@@ -305,7 +337,7 @@ public class ProductController {
     }
 
         // Upload / thay ảnh bìa cho volume
-    @PostMapping("/volume/{volumeId}/cover")
+    @PostMapping("/{pid}/tap/{volumeId}/cover")
     public String uploadVolumeCover(@PathVariable("volumeId") int volumeId,
         @RequestParam("coverFile") MultipartFile coverFile, HttpSession session) {
 
@@ -319,14 +351,14 @@ public class ProductController {
                     volume.setCoverImage(imageUrl);
                     volumeRepository.save(volume);
                 }
-                return "redirect:/products/" + volume.getProduct().getProductId() + "/edit";
+                return editRedirect(volume.getProduct().getProductId());
             }
 
             return "redirect:/";
     }
 
         // Gỡ ảnh bìa volume
-    @PostMapping("/volume/{volumeId}/cover/remove")
+    @PostMapping("/{pid}/tap/{volumeId}/cover/remove")
     public String removeVolumeCover(@PathVariable("volumeId") int volumeId, HttpSession session) {
         User currentUser = (User) session.getAttribute("loggedInUser");
         Volume volume = volumeRepository.findByIdWithProductUploader(volumeId).orElse(null);
@@ -335,7 +367,7 @@ public class ProductController {
             deleteImage(volume.getCoverImage());
             volume.setCoverImage(null);
             volumeRepository.save(volume);
-            return "redirect:/products/" + volume.getProduct().getProductId() + "/edit";
+            return editRedirect(volume.getProduct().getProductId());
         }
         return "redirect:/";
     }
@@ -357,7 +389,7 @@ public class ProductController {
                     productRepository.save(product);
                 }
             }
-            return "redirect:/products/" + productId + "/edit";
+            return editRedirect(productId);
         }
         return "redirect:/";
     }
@@ -372,14 +404,14 @@ public class ProductController {
             deleteImage(product.getCoverImage());
             product.setCoverImage(null);
             productRepository.save(product);
-            return "redirect:/products/" + productId + "/edit";
+            return editRedirect(productId);
         }
         return "redirect:/";
     }
 
     // ============== CHAPTER ==============
 
-    @GetMapping("/volume/{volumeId}/add-chapter")
+    @GetMapping("/{pid}/{pslug}/tap/{volumeId}/{vslug}/add-chapter")
     public String showAddChapterForm(@PathVariable("volumeId") int volumeId,
         Model model, HttpSession session) {
 
@@ -394,7 +426,7 @@ public class ProductController {
             return "chapter-add";
         }
 
-    @PostMapping("/volume/{volumeId}/add-chapter")
+    @PostMapping("/{pid}/{pslug}/tap/{volumeId}/{vslug}/add-chapter")
     public String saveChapter(@PathVariable("volumeId") int volumeId, @RequestParam("title") String title,
         @RequestParam("context") String context, HttpSession session) {
 
@@ -414,13 +446,13 @@ public class ProductController {
                 chapterRepository.save(chapter);
                 touchProduct(volume.getProduct().getProductId());
 
-                return "redirect:/products/" + volume.getProduct().getProductId() + "/edit";
+                return editRedirect(volume.getProduct().getProductId());
             }
 
             return "redirect:/";
         }
 
-    @PostMapping("/chapter/{chapterId}/edit-title")
+    @PostMapping("/{pid}/chuong/{chapterId}/edit-title")
     public String editChapterTitle(@PathVariable("chapterId") int chapterId,
         @RequestParam("title") String title, HttpSession session) {
 
@@ -433,14 +465,14 @@ public class ProductController {
                     chapter.setTitle(cleanTitle);
                     chapterRepository.save(chapter);
                 }
-                return "redirect:/products/" + chapter.getVolume().getProduct().getProductId() + "/edit";
+                return editRedirect(chapter.getVolume().getProduct().getProductId());
             }
 
             return "redirect:/";
     }
 
     // Sửa nội dung chương
-    @GetMapping("/chapter/{chapterId}/edit")
+    @GetMapping("/{pid}/{pslug}/chuong/{chapterId}/{cslug}/edit")
     public String showEditChapterForm(@PathVariable("chapterId") int chapterId,
         Model model, HttpSession session) {
 
@@ -458,7 +490,7 @@ public class ProductController {
             return "chapter-edit";
     }
 
-    @PostMapping("/chapter/{chapterId}/edit")
+    @PostMapping("/{pid}/{pslug}/chuong/{chapterId}/{cslug}/edit")
     public String editChapterContent(@PathVariable("chapterId") int chapterId,
         @RequestParam("title") String title,
         @RequestParam("context") String context, HttpSession session) {
@@ -478,12 +510,12 @@ public class ProductController {
             chapterRepository.save(chapter);
             touchProduct(chapter.getVolume().getProduct().getProductId());
 
-            return "redirect:/products/" + chapter.getVolume().getProduct().getProductId() + "/edit";
+            return editRedirect(chapter.getVolume().getProduct().getProductId());
     }
 
     // Delete chapter
 
-    @PostMapping("/chapter/{chapterId}/delete")
+    @PostMapping("/{pid}/chuong/{chapterId}/delete")
     public String deleteChapter(@PathVariable("chapterId") int chapterId, HttpSession session) {
         User currentUser = (User) session.getAttribute("loggedInUser");
         Chapter chapter = chapterRepository.findByIdWithVolumeProductUploader(chapterId).orElse(null);
@@ -492,14 +524,14 @@ public class ProductController {
             int productId = chapter.getVolume().getProduct().getProductId();
             chapter.setDeleted(true);
             chapterRepository.save(chapter);
-            return "redirect:/products/" + productId + "/edit";
+            return editRedirect(productId);
         }
 
         return "redirect:/";
     }
 
     // Add illustrations into chapter
-    @PostMapping("/chapter/{chapterId}/images")
+    @PostMapping("/{pid}/chuong/{chapterId}/images")
     public String addChapterImages(@PathVariable("chapterId") int chapterId,
         @RequestParam("imageFiles") List<MultipartFile> imageFiles, HttpSession session) {
 
@@ -528,7 +560,7 @@ public class ProductController {
                     }
                 }
 
-                String redirectUrl = "redirect:/products/chapter/" + chapterId + "/edit";
+                String redirectUrl = "redirect:" + chapterEditPath(chapter);
                 if (uploadedCount > 0) {
                     redirectUrl += "?uploaded=" + uploadedCount;
                 }
@@ -538,11 +570,11 @@ public class ProductController {
                 return redirectUrl;
             }
 
-            return chapter != null ? "redirect:/products/chapter/" + chapterId + "/edit?uploadError=true" : "redirect:/";
+            return chapter != null ? "redirect:" + chapterEditPath(chapter) + "?uploadError=true" : "redirect:/";
     }
 
     // Xóa 1 ảnh minh họa khỏi chương
-    @PostMapping("/chapter/image/{imageId}/delete")
+    @PostMapping("/{pid}/chuong/image/{imageId}/delete")
     public String deleteChapterImage(@PathVariable("imageId") int imageId, HttpSession session) {
         User currentUser = (User) session.getAttribute("loggedInUser");
         ChapterImage image = chapterImageRepository.findByIdWithChapterVolumeProductUploader(imageId).orElse(null);
@@ -550,14 +582,14 @@ public class ProductController {
         if (image != null && canManageVolume(currentUser, image.getChapter().getVolume())) {
             int chapterId = image.getChapter().getChapterId();
             chapterImageRepository.delete(image);
-            return "redirect:/products/chapter/" + chapterId + "/edit";
+            return "redirect:" + chapterEditPath(image.getChapter());
         }
 
         return "redirect:/";
     }
 
     // Kéo thả sắp xếp ảnh trong 1 chương - AJAX
-    @PostMapping("/chapter/{chapterId}/images/reorder")
+    @PostMapping("/{pid}/chuong/{chapterId}/images/reorder")
     @ResponseBody
     public Map<String, Object> reorderChapterImages(@PathVariable("chapterId") int chapterId,
         @RequestBody List<Integer> orderedImageIds, HttpSession session) {
@@ -594,7 +626,7 @@ public class ProductController {
     }
 
     // Kéo thả sắp xếp chương trong 1 volume - AJAX
-    @PostMapping("/volume/{volumeId}/chapters/reorder")
+    @PostMapping("/{pid}/tap/{volumeId}/chapters/reorder")
     @ResponseBody
     public Map<String, Object> reorderChapters(@PathVariable("volumeId") int volumeId,
         @RequestBody List<Integer> orderedChapterIds, HttpSession session) {
@@ -631,11 +663,17 @@ public class ProductController {
     }
 
     // 6. Enjoy (Chan bo may de)
-    @GetMapping("/chapter/{chapterId}")
-    public String readChapter(@PathVariable("chapterId") Integer chapterId, Model model, HttpSession session) {
+    @GetMapping("/{pid}/{pslug}/chuong/{chapterId}/{cslug}")
+    public String readChapter(@PathVariable("chapterId") Integer chapterId,
+                              @PathVariable("pid") int pid, @PathVariable("pslug") String pslug,
+                              @PathVariable("cslug") String cslug, Model model, HttpSession session) {
         Chapter chapter = chapterRepository.findByIdWithVolumeProductUploader(chapterId).orElse(null);
         if (chapter == null) {
             return "redirect:/";
+        }
+        String canonical = chapter.getVolume().getProduct().getPath() + "/chuong/" + chapterId + "/" + chapter.getSlug();
+        if (!canonical.equals("/truyen/" + pid + "/" + pslug + "/chuong/" + chapterId + "/" + cslug)) {
+            return "redirect:" + canonical; // sai/thiếu tên trong link -> về link chuẩn
         }
         User currentUser = (User) session.getAttribute("loggedInUser");
         Product product = chapter.getVolume().getProduct();
@@ -647,7 +685,9 @@ public class ProductController {
 
         model.addAttribute("chapter", chapter);
         model.addAttribute("images", images);
+        // Nội dung chia khối chữ/ảnh để ảnh nằm đúng vị trí giữa các đoạn văn
         model.addAttribute("blocks", main.service.ChapterContent.parse(chapter.getContext()));
+        model.addAttribute("wordCount", main.service.ChapterContent.wordCount(chapter.getContext()));
         return "chapter-detail";
     }
 

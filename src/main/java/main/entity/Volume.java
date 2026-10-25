@@ -52,6 +52,8 @@ public class Volume {
     public Product getProduct() { return product; }
     public List<Chapter> getChapters() { return chapters; }
     public String getTitle() { return this.title;}
+    /** Đuôi tiêu đề dùng trong link. */
+    public String getSlug() { return main.util.Slugs.slug(title, "tap"); }
 
     public void addChapter(Chapter chapter) {this.chapters.add(chapter);}
     public void setTitle(String title) { this.title = title;}

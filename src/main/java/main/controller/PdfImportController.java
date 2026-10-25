@@ -45,7 +45,7 @@ import java.util.stream.Stream;
  * chỉ đẩy lên R2 khi bấm lưu.
  */
 @Controller
-@RequestMapping("/products/volume")
+@RequestMapping("/truyen")
 public class PdfImportController {
 
     private static final Logger log = LoggerFactory.getLogger(PdfImportController.class);
@@ -77,7 +77,7 @@ public class PdfImportController {
 
     // ---------- 1. Form upload PDF ----------
 
-    @GetMapping("/{volumeId}/import-pdf")
+    @GetMapping("/{pid}/{pslug}/tap/{volumeId}/{vslug}/import-pdf")
     public String form(@PathVariable("volumeId") int volumeId, Model model, HttpSession session) {
         Volume volume = loadManaged(volumeId, session);
         if (volume == null) {
@@ -89,7 +89,7 @@ public class PdfImportController {
 
     // ---------- 2. Phân tích PDF -> trang xem trước ----------
 
-    @PostMapping("/{volumeId}/import-pdf")
+    @PostMapping("/{pid}/{pslug}/tap/{volumeId}/{vslug}/import-pdf")
     public String analyze(@PathVariable("volumeId") int volumeId,
                           @RequestParam("pdfFile") MultipartFile pdfFile,
                           @RequestParam(value = "pattern", required = false) String pattern,
@@ -156,7 +156,7 @@ public class PdfImportController {
 
     // ---------- 3. Lưu hàng loạt ----------
 
-    @PostMapping("/{volumeId}/import-pdf/commit")
+    @PostMapping("/{pid}/{pslug}/tap/{volumeId}/{vslug}/import-pdf/commit")
     public String commit(@PathVariable("volumeId") int volumeId,
                          @RequestParam Map<String, String> p,
                          HttpSession session) {
@@ -169,7 +169,7 @@ public class PdfImportController {
 
         String token = p.get("token");
         if (token == null || !TOKEN.matcher(token).matches()) {
-            return "redirect:/products/" + productId + "/edit?importError=1";
+            return "redirect:" + editPath(volume) + "?importError=1";
         }
         Path tmpDir = tmpRoot().resolve(token).normalize();
 
@@ -233,7 +233,7 @@ public class PdfImportController {
 
         if (titles.isEmpty() && poolFiles.isEmpty()) {
             deleteQuietly(tmpDir);
-            return "redirect:/products/" + productId + "/edit?importError=2";
+            return "redirect:" + editPath(volume) + "?importError=2";
         }
 
         // 3. Upload mỗi ảnh một lần (song song)
@@ -304,11 +304,16 @@ public class PdfImportController {
         productRepository.touch(productId, LocalDateTime.now());
         deleteQuietly(tmpDir);
 
-        return "redirect:/products/" + productId + "/edit?imported=" + createdCount
+        return "redirect:" + editPath(volume) + "?imported=" + createdCount
                 + "&images=" + ok + "&failed=" + failed;
     }
 
     // ---------- helpers ----------
+
+    /** Link đẹp của trang chỉnh sửa truyện chứa tập này. */
+    private static String editPath(Volume volume) {
+        return volume.getProduct().getPath() + "/edit";
+    }
 
     private Volume loadManaged(int volumeId, HttpSession session) {
         User currentUser = (User) session.getAttribute("loggedInUser");

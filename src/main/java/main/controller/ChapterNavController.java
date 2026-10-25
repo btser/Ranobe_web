@@ -20,12 +20,12 @@ public class ChapterNavController {
         this.chapterRepository = chapterRepository;
     }
 
-    @GetMapping("/products/chapter/{chapterId}/prev")
+    @GetMapping("/truyen/{pid}/chuong/{chapterId}/prev")
     public String prev(@PathVariable("chapterId") int chapterId) {
         return go(chapterId, -1);
     }
 
-    @GetMapping("/products/chapter/{chapterId}/next")
+    @GetMapping("/truyen/{pid}/chuong/{chapterId}/next")
     public String next(@PathVariable("chapterId") int chapterId) {
         return go(chapterId, 1);
     }
@@ -42,11 +42,13 @@ public class ChapterNavController {
             if (list.get(i).getChapterId() == chapterId) {
                 int j = i + delta;
                 if (j >= 0 && j < list.size()) {
-                    return "redirect:/products/chapter/" + list.get(j).getChapterId();
+                    Chapter target = list.get(j);
+                    return "redirect:" + cur.getVolume().getProduct().getPath() + "/chuong/"
+                            + target.getChapterId() + "/" + target.getSlug();
                 }
                 break;
             }
         }
-        return "redirect:/products/" + cur.getVolume().getProduct().getProductId();
+        return "redirect:" + cur.getVolume().getProduct().getPath();
     }
 }

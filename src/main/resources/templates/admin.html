@@ -2,11 +2,14 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
+    <link rel="icon" type="image/png" th:href="${siteLogoSmall}">
     <title>Quản trị Ranobe</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background-color: #121212; color: #e0e0e0; }
         .navbar { display: flex; justify-content: space-between; align-items: center; background-color: #1e1e1e; padding: 15px 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.5); }
         .logo { font-size: 22px; font-weight: bold; color: #4da6ff; text-decoration: none; }
+        .logo { display: inline-flex; align-items: center; gap: 10px; }
+        .logo img { width: 38px; height: 38px; border-radius: 10px; display: block; }
         .container { max-width: 1100px; margin: 30px auto; padding: 0 20px; }
         .panel { background: #1e1e1e; border-top: 4px solid #4da6ff; border-radius: 8px; padding: 22px; margin-bottom: 24px; box-shadow: 0 4px 10px rgba(0,0,0,0.45); }
         h1, h2 { margin-top: 0; color: #ffca28; }
@@ -27,7 +30,7 @@
 </head>
 <body>
 <nav class="navbar">
-    <a href="/" class="logo">📚 Ranobe Kingdom</a>
+    <a href="/" class="logo"><img th:src="${siteLogoSmall}" alt="LN"> Ranobe Kingdom</a>
     <a href="/" class="back-link">Về trang chủ</a>
 </nav>
 
@@ -50,7 +53,7 @@
             <tr th:each="product : ${products}">
                 <td th:text="${product.productId}">1</td>
                 <td>
-                    <a th:href="@{'/products/' + ${product.productId}}" th:text="${product.title}" style="color:#4da6ff; text-decoration:none;">Truyện</a>
+                    <a th:href="@{${product.path}}" th:text="${product.title}" style="color:#4da6ff; text-decoration:none;">Truyện</a>
                 </td>
                 <td th:text="${product.uploader != null ? product.uploader.userName : 'Ẩn danh'}">User</td>
                 <td><span class="tag" th:text="${product.status}">PUBLIC</span></td>

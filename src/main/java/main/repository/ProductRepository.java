@@ -16,10 +16,10 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
 
     List<Product> findByIsDeletedFalseAndStatus(main.entity.Status status);
 
-    @Query("SELECT p FROM Product p LEFT JOIN FETCH p.category LEFT JOIN FETCH p.uploader")
+    @Query("SELECT DISTINCT p FROM Product p LEFT JOIN FETCH p.category LEFT JOIN FETCH p.categories LEFT JOIN FETCH p.uploader")
     List<Product> findAllWithDetails();
 
-    @Query("SELECT p FROM Product p LEFT JOIN FETCH p.category LEFT JOIN FETCH p.uploader WHERE p.productId = :id")
+    @Query("SELECT DISTINCT p FROM Product p LEFT JOIN FETCH p.category LEFT JOIN FETCH p.categories LEFT JOIN FETCH p.uploader WHERE p.productId = :id")
     Optional<Product> findByIdWithDetails(@Param("id") Integer id);
 
     @Query("SELECT p FROM Product p WHERE p.isDeleted = false ORDER BY p.updatedAt DESC NULLS LAST, p.productId DESC")
@@ -33,7 +33,7 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
     @Query("UPDATE Product p SET p.updatedAt = :now WHERE p.productId = :id")
     void touch(@Param("id") int id, @Param("now") LocalDateTime now);
 
-    @Query("SELECT p FROM Product p LEFT JOIN FETCH p.category " +
+    @Query("SELECT DISTINCT p FROM Product p LEFT JOIN FETCH p.category LEFT JOIN FETCH p.categories " +
            "WHERE p.uploader.userId = :userId AND p.isDeleted = false " +
            "ORDER BY p.updatedAt DESC NULLS LAST, p.productId DESC")
     List<Product> findByUploaderLatestFirst(@Param("userId") int userId);

@@ -60,6 +60,11 @@ public class PdfAnalyzer {
             "^(?:mục lục|table of contents|contents|minh họa|illustrations?|mở đầu|lời mở đầu|prologue|lời nói đầu)\\b.*$",
             Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
 
+    /** Dòng đầu của phần nằm trước chương 1, ví dụ "Mở đầu: Cơ cấu xã hội Nhật Bản" -> dùng làm tên chương. */
+    private static final Pattern PROLOGUE_HEAD = Pattern.compile(
+            "^(?:phần mở đầu|lời mở đầu|mở đầu|prologue|lời nói đầu|lời giới thiệu)\\b.*$",
+            Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
+
     /** Tóm tắt chỉ được tìm ở vài trang đầu, trước đề mục chương đầu tiên. */
     private static final int SUMMARY_MAX_PAGE = 15;
     /** Trang có từ chừng này ký tự (không tính khoảng trắng) mới coi là đã vào phần nội dung. */
@@ -304,12 +309,15 @@ public class PdfAnalyzer {
                 drafts.add(new Draft("Nội dung", reflow(curLines), Math.max(1, prefaceStart)));
             } else {
                 drafts.add(new Draft(curTitle, reflow(curLines), curStart));
-                // Chữ nằm trước chương đầu (mở đầu, prologue...) gộp vào chương đầu thay vì tách riêng;
-                // đoạn quá ngắn (trang tên sách, mục lục) thì bỏ.
+                // Chữ nằm trước chương đầu (Mở đầu, Prologue...) là một chương riêng, đặt lên đầu.
+                // Đoạn quá ngắn (trang tên sách, mục lục) thì bỏ.
                 if (compactLength(String.join("", preface)) >= 300) {
-                    Draft first = drafts.get(0);
-                    drafts.set(0, new Draft(first.getTitle(),
-                            reflow(preface) + "\n\n" + first.getText(), Math.max(1, prefaceStart)));
+                    String title = "Mở đầu";
+                    List<String> body = new ArrayList<>(preface);
+                    if (!body.isEmpty() && body.get(0).length() <= 100 && PROLOGUE_HEAD.matcher(body.get(0)).matches()) {
+                        title = cleanTitle(body.remove(0));
+                    }
+                    drafts.add(0, new Draft(title, reflow(body), Math.max(1, prefaceStart)));
                 }
             }
 

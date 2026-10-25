@@ -2,6 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
+    <link rel="icon" type="image/png" th:href="${siteLogoSmall}">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title th:text="${profileUser.userName} + ' - Ranobe Kingdom'">Hồ sơ</title>
     <style>
@@ -10,6 +11,8 @@
 
         .navbar { display: flex; justify-content: space-between; align-items: center; background-color: #1e1e1e; padding: 15px 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.5); }
         .logo { font-size: 22px; font-weight: bold; color: #4da6ff; }
+        .logo { display: inline-flex; align-items: center; gap: 10px; }
+        .logo img { width: 38px; height: 38px; border-radius: 10px; display: block; }
         .nav-links { display: flex; gap: 15px; align-items: center; }
         .btn { padding: 8px 16px; border-radius: 4px; font-weight: bold; font-size: 14px; transition: 0.2s; display: inline-block; }
         .btn-login { border: 1px solid #4da6ff; color: #4da6ff; }
@@ -68,7 +71,7 @@
 <body>
 
 <nav class="navbar">
-    <a href="/" class="logo">📚 Ranobe Kingdom</a>
+    <a href="/" class="logo"><img th:src="${siteLogoSmall}" alt="LN"> Ranobe Kingdom</a>
     <div class="nav-links">
         <th:block th:if="${user == null}">
             <a href="/login" class="btn btn-login">Đăng Nhập</a>
@@ -142,14 +145,15 @@
             </div>
 
             <div class="works">
-                <a class="work" th:each="p : ${products}" th:href="@{'/products/' + ${p.productId}}">
+                <a class="work" th:each="p : ${products}" th:href="@{${p.path}}">
                     <div class="thumb">
                         <img th:src="${#strings.isEmpty(p.coverImage)} ? @{/images/default-cover.webp} : ${p.coverImage}"
                              onerror="this.onerror=null;this.src='/images/default-cover.webp'"
                              loading="lazy" alt="Bìa"/>
                     </div>
                     <div class="work-body">
-                        <span class="tag" th:if="${p.category != null}" th:text="${p.category.categoryName}">Thể loại</span>
+                        <span class="tag" th:each="c : ${p.categories}" th:text="${c.categoryName}">Thể loại</span>
+                        <span class="tag" th:if="${#sets.isEmpty(p.categories) and p.category != null}" th:text="${p.category.categoryName}">Thể loại</span>
                         <div class="work-title" th:text="${p.title}">Tên truyện</div>
                         <div class="work-meta"><b>Trạng thái:</b> <span th:text="${p.status}">PUBLIC</span></div>
                     </div>

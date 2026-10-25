@@ -2,12 +2,15 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
+    <link rel="icon" type="image/png" th:href="${siteLogoSmall}">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Nhập tập từ PDF</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background: #121212; color: #e0e0e0; }
         .navbar { background: #1e1e1e; padding: 15px 30px; box-shadow: 0 2px 8px rgba(0,0,0,.5); }
         .logo { font-size: 22px; font-weight: bold; color: #4da6ff; text-decoration: none; }
+        .logo { display: inline-flex; align-items: center; gap: 10px; }
+        .logo img { width: 38px; height: 38px; border-radius: 10px; display: block; }
         .wrap { max-width: 720px; margin: 30px auto; padding: 0 16px; }
         .card { background: #1e1e1e; border-radius: 8px; padding: 24px; box-shadow: 0 4px 15px rgba(0,0,0,.5); }
         h2 { color: #ffca28; margin-top: 0; }
@@ -27,10 +30,10 @@
     </style>
 </head>
 <body>
-<nav class="navbar"><a href="/" class="logo">📚 Ranobe Kingdom</a></nav>
+<nav class="navbar"><a href="/" class="logo"><img th:src="${siteLogoSmall}" alt="LN"> Ranobe Kingdom</a></nav>
 
 <div class="wrap">
-    <a class="back" th:href="@{'/products/' + ${product.productId} + '/edit'}">← Quay lại trang chỉnh sửa</a>
+    <a class="back" th:href="@{${product.path + '/edit'}}">← Quay lại trang chỉnh sửa</a>
 
     <div class="card">
         <h2>📄 Nhập tập từ PDF</h2>
@@ -41,7 +44,7 @@
 
         <div class="error" th:if="${error != null}" th:text="${error}"></div>
 
-        <form th:action="@{'/products/volume/' + ${volume.volumeId} + '/import-pdf'}"
+        <form th:action="@{${product.path + '/tap/' + volume.volumeId + '/' + volume.slug + '/import-pdf'}}"
               method="post" enctype="multipart/form-data" id="importForm">
 
             <label for="pdfFile">File PDF</label>

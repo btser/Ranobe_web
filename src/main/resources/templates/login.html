@@ -1,43 +1,188 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Login Lalobe</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Đăng nhập - Ranobe Kingdom</title>
+    <link rel="icon" type="image/png" th:href="${siteLogoSmall}">
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 40px; background-color: #121212; color: #e0e0e0; }
-        .login-card { max-width: 400px; margin: 50px auto; background: #1e1e1e; padding: 30px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); border-top: 4px solid #4da6ff; }
-        h2 { text-align: center; color: #4da6ff; margin-top: 0; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; }
-        input[type="text"], input[type="password"] { width: 100%; padding: 10px; border-radius: 4px; border: 1px solid #333; background: #2a2a2a; color: #fff; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; background-color: #007bff; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        button:hover { background-color: #0056b3; }
-        .error-msg { color: #ff4d4d; text-align: center; margin-bottom: 15px; }
+        :root {
+            --bg: #121212;
+            --panel: #1b1b1d;
+            --text: #e8e8e8;
+            --muted: #9a9a9a;
+            --line: #5a5a5e;
+            --accent: #4da6ff;
+            --accent-2: #1f6fd1;
+            --shape: linear-gradient(135deg, #0e2f55 0%, #2f86e6 100%);
+            --glow: rgba(77, 166, 255, .5);
+        }
+        * { box-sizing: border-box; }
+        body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--text);
+               font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+               display: flex; align-items: center; justify-content: center; padding: 24px 16px; }
+
+        .top-left { position: fixed; top: 14px; left: 20px; }
+        .top-left a { display: inline-flex; align-items: center; gap: 12px; color: #d0d0d0; text-decoration: none;
+                      font-size: 18px; font-weight: 600; transition: color .2s; }
+        .top-left a:hover { color: var(--accent); }
+        .top-left img { width: 48px; height: 48px; border-radius: 12px; display: block; box-shadow: 0 0 12px var(--glow); }
+        .container { position: relative; width: 860px; max-width: 100%; height: 560px; background: var(--panel);
+                     border: 2px solid var(--accent); border-radius: 6px; overflow: hidden;
+                     box-shadow: 0 0 22px var(--glow), 0 0 60px rgba(0, 0, 0, .6) inset; }
+
+        /* Hình chéo: bốn điểm ở cả hai trạng thái để chuyển mượt */
+        .shape { position: absolute; inset: 0; background: var(--shape);
+                 clip-path: polygon(48% 0, 100% 0, 100% 100%, 79% 100%);
+                 transition: clip-path .8s ease; }
+        .container.register .shape { clip-path: polygon(0 0, 52% 0, 21% 100%, 0 100%); }
+
+        .form-box, .info { position: absolute; top: 0; height: 100%; width: 50%;
+                           display: flex; flex-direction: column; justify-content: center; }
+        .form-box { padding: 0 48px; }
+        .form-box.login { left: 0; }
+        .form-box.register { right: 0; }
+        .info { padding: 0 44px; }
+        .info.login { right: 0; text-align: right; align-items: flex-end; }
+        .info.register { left: 0; }
+        .info h2 { margin: 0 0 10px; font-size: 34px; line-height: 1.1; text-transform: uppercase; color: #fff; letter-spacing: .5px; }
+        .info p { margin: 0; font-size: 15px; line-height: 1.5; color: rgba(255, 255, 255, .88); max-width: 260px; }
+
+        /* Hiệu ứng trượt + mờ khi đổi qua lại */
+        .anim { transition: transform .7s ease, opacity .7s ease, filter .7s ease; transition-delay: calc(var(--d, 0) * .08s); }
+        .form-box.login .anim, .info.login .anim { transform: translateX(0); opacity: 1; filter: blur(0); }
+        .form-box.register .anim, .info.register .anim { transform: translateX(120%); opacity: 0; filter: blur(10px); }
+        .info.login .anim { transform: translateX(0); }
+        .info.register .anim { transform: translateX(-120%); }
+        .container.register .form-box.login .anim { transform: translateX(-120%); opacity: 0; filter: blur(10px); }
+        .container.register .info.login .anim { transform: translateX(120%); opacity: 0; filter: blur(10px); }
+        .container.register .form-box.register .anim, .container.register .info.register .anim { transform: translateX(0); opacity: 1; filter: blur(0); }
+        .container:not(.register) .form-box.register, .container:not(.register) .info.register { pointer-events: none; }
+        .container.register .form-box.login, .container.register .info.login { pointer-events: none; }
+
+        h1 { margin: 0 0 22px; text-align: center; font-size: 30px; color: #fff; }
+        .field { position: relative; height: 48px; margin-bottom: 20px; }
+        .field input { width: 100%; height: 100%; background: transparent; border: 0; border-bottom: 2px solid var(--line);
+                       outline: none; color: #fff; font-size: 15px; padding: 14px 30px 0 0; transition: border-color .3s; }
+        .field label { position: absolute; left: 0; top: 14px; font-size: 15px; color: var(--muted); pointer-events: none;
+                       transition: all .25s ease; }
+        .field svg { position: absolute; right: 0; top: 16px; width: 18px; height: 18px; fill: var(--muted); transition: fill .3s; }
+        .field input:focus, .field input:not(:placeholder-shown) { border-color: var(--accent); }
+        .field input:focus ~ label, .field input:not(:placeholder-shown) ~ label { top: -2px; font-size: 12px; color: var(--accent); }
+        .field input:focus ~ svg, .field input:not(:placeholder-shown) ~ svg { fill: var(--accent); }
+
+        /* Trình duyệt tự điền: giữ nền tối, chữ trắng và đẩy nhãn lên để không đè chữ */
+        .field input:-webkit-autofill { -webkit-text-fill-color: #fff; caret-color: #fff;
+                                        -webkit-box-shadow: 0 0 0 1000px var(--panel) inset; transition: background-color 9999s; }
+        .field input:-webkit-autofill ~ label { top: -2px; font-size: 12px; color: var(--accent); }
+        .field input:-webkit-autofill ~ svg { fill: var(--accent); }
+        .field input:-webkit-autofill { border-color: var(--accent); }
+
+        .btn { width: 100%; height: 44px; margin-top: 6px; border: 0; border-radius: 40px; cursor: pointer; color: #fff; font-size: 16px; font-weight: 700;
+               background: linear-gradient(90deg, var(--accent-2), var(--accent)); box-shadow: 0 0 14px var(--glow); transition: transform .2s, box-shadow .2s; }
+        .btn:hover { transform: translateY(-1px); box-shadow: 0 0 24px var(--glow); }
+        .switch { margin-top: 18px; text-align: center; font-size: 14px; color: var(--muted); }
+        .switch a { display: block; margin-top: 4px; color: var(--accent); text-decoration: none; font-weight: 600; }
+        .switch a:hover { text-decoration: underline; }
+        .error-msg { background: rgba(255, 77, 77, .12); border: 1px solid #ff4d4d; color: #ff9a9a; border-radius: 6px;
+                     padding: 8px 10px; margin-bottom: 16px; font-size: 14px; text-align: center; }
+
+        @media (max-width: 720px) {
+            .container { height: auto; min-height: 0; }
+            .shape, .info { display: none; }
+            .form-box { position: static; width: 100%; height: auto; padding: 36px 26px; }
+            .form-box .anim { transition: none; }
+            .form-box.register { display: none; }
+            .container.register .form-box.register { display: flex; }
+            .container.register .form-box.login { display: none; }
+            .form-box.login .anim, .form-box.register .anim,
+            .container.register .form-box.register .anim { transform: none; opacity: 1; filter: none; }
+        }
     </style>
 </head>
 <body>
+<div class="top-left"><a href="/"><img th:src="${siteLogoBig}" alt="LN"> Trang chủ</a></div>
 
-    <div class="login-card">
-        <h2>Login</h2>
-        
-        <!-- Notify if wrong username or password -->
+<div class="container " id="box">
+    <div class="shape"></div>
+
+    <!-- ĐĂNG NHẬP -->
+    <div class="form-box login">
+        <h1 class="anim" style="--d:0">Đăng nhập</h1>
         <div th:if="${error}" class="error-msg" th:text="${error}"></div>
-
-        <form th:action="@{/login}" method="post">
-            <div class="form-group">
-                <label>Username:</label>
-                <input type="text" name="username" required placeholder="Enter your username..."/>
+        <form th:action="@{/login}" method="post" autocomplete="on">
+            <div class="field anim" style="--d:1">
+                <input type="text" name="username" required placeholder=" " autocomplete="username">
+                <label>Tên đăng nhập</label>
+                <svg viewBox="0 0 24 24"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0 2c-4 0-8 2-8 5v3h16v-3c0-3-4-5-8-5z"/></svg>
             </div>
-
-            <div class="form-group">
-                <label>Password:</label>
-                <input type="password" name="password" required placeholder="Enter your password..."/>
+            <div class="field anim" style="--d:2">
+                <input type="password" name="password" required placeholder=" " autocomplete="current-password">
+                <label>Mật khẩu</label>
+                <svg viewBox="0 0 24 24"><path d="M18 8h-1V6a5 5 0 0 0-10 0v2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2zM9 6a3 3 0 0 1 6 0v2H9V6z"/></svg>
             </div>
-
-            <button type="submit">Login</button>
-            <a href="/register" class="link">Register</a>
+            <button class="btn anim" style="--d:3" type="submit">Đăng nhập</button>
+            <div class="switch anim" style="--d:4">Chưa có tài khoản?<a href="/register" data-go="register">Đăng ký</a></div>
         </form>
     </div>
+    <div class="info login">
+        <h2 class="anim" style="--d:0">Chào mừng<br>trở lại!</h2>
+        <p class="anim" style="--d:1">Rất vui được gặp lại bạn. Đăng nhập để tiếp tục đọc và đăng truyện.</p>
+    </div>
 
+    <!-- ĐĂNG KÝ -->
+    <div class="info register">
+        <h2 class="anim" style="--d:0">Chào mừng!</h2>
+        <p class="anim" style="--d:1">Tạo tài khoản để đăng truyện, theo dõi và có trang cá nhân của riêng bạn.</p>
+    </div>
+    <div class="form-box register">
+        <h1 class="anim" style="--d:0">Đăng ký</h1>
+        
+        <form th:action="@{/register}" method="post" autocomplete="on">
+            <div class="field anim" style="--d:1">
+                <input type="text" name="userName" required placeholder=" " autocomplete="nickname">
+                <label>Tên hiển thị</label>
+                <svg viewBox="0 0 24 24"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0 2c-4 0-8 2-8 5v3h16v-3c0-3-4-5-8-5z"/></svg>
+            </div>
+            <div class="field anim" style="--d:2">
+                <input type="email" name="email" required placeholder=" " autocomplete="email">
+                <label>Email</label>
+                <svg viewBox="0 0 24 24"><path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z"/></svg>
+            </div>
+            <div class="field anim" style="--d:3">
+                <input type="text" name="username" required placeholder=" " autocomplete="username">
+                <label>Tên đăng nhập</label>
+                <svg viewBox="0 0 24 24"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0 2c-4 0-8 2-8 5v3h16v-3c0-3-4-5-8-5z"/></svg>
+            </div>
+            <div class="field anim" style="--d:4">
+                <input type="password" name="password" required placeholder=" " autocomplete="new-password">
+                <label>Mật khẩu</label>
+                <svg viewBox="0 0 24 24"><path d="M18 8h-1V6a5 5 0 0 0-10 0v2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2zM9 6a3 3 0 0 1 6 0v2H9V6z"/></svg>
+            </div>
+            <button class="btn anim" style="--d:5" type="submit">Đăng ký</button>
+            <div class="switch anim" style="--d:6">Đã có tài khoản?<a href="/login" data-go="login">Đăng nhập</a></div>
+        </form>
+    </div>
+</div>
+
+<script>
+    (function () {
+        var box = document.getElementById('box');
+
+        // Đổi qua lại đăng nhập / đăng ký không tải lại trang
+        document.querySelectorAll('[data-go]').forEach(function (a) {
+            a.addEventListener('click', function (e) {
+                e.preventDefault();
+                var mode = a.getAttribute('data-go');
+                box.classList.toggle('register', mode === 'register');
+                document.title = mode === 'register' ? 'Đăng Ký Tài Khoản' : 'Đăng nhập - Ranobe Kingdom';
+                try { history.replaceState(null, '', '/' + mode); } catch (err) { /* bỏ qua */ }
+                var err = box.querySelector('.error-msg');
+                if (err) { err.style.display = 'none'; }
+            });
+        });
+
+    })();
+</script>
 </body>
 </html>

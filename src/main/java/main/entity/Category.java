@@ -25,6 +25,15 @@ public class Category {
     }
 
     public int getCategoryId() { return categoryId; }
+    // So sánh theo id để Set<Category> và contains() hoạt động giữa các lần truy vấn
+    @Override
+    public boolean equals(Object o) {
+        return o instanceof Category && ((Category) o).categoryId == this.categoryId;
+    }
+
+    @Override
+    public int hashCode() { return Integer.hashCode(categoryId); }
+
     public String getCategoryName() { return categoryName; }
     public boolean isDeleted() { return isDeleted; }
 }

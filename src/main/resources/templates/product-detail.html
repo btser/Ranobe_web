@@ -2,11 +2,14 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
+    <link rel="icon" type="image/png" th:href="${siteLogoSmall}">
     <title th:text="${product?.title != null ? product.title : 'Chi tiết truyện'}">Chi tiết truyện</title>
     <style>
         body { margin:0; font-family:'Segoe UI',Tahoma,sans-serif; background:#111; color:#f2f2f2; }
         .navbar { background:#1b1b1b; padding:14px 28px; border-bottom:1px solid #303030; }
         .logo { color:#fff; text-decoration:none; font-weight:800; font-size:20px; }
+        .logo { display: inline-flex; align-items: center; gap: 10px; }
+        .logo img { width: 38px; height: 38px; border-radius: 10px; display: block; }
         .container { max-width:1000px; margin:24px auto; padding:0 16px; }
         .back-link { color:#aaa; text-decoration:none; display:inline-block; margin-bottom:14px; }
 
@@ -42,7 +45,12 @@
         .panel { background:#1d1d1d; border:1px solid #3a3a3a; border-radius:4px; margin-top:24px; padding:14px; }
         .panel-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
         .panel h2 { margin:0; font-size:18px; }
-        .volume { display:grid; grid-template-columns:120px 1fr; gap:18px; margin-bottom:18px; }
+        .panel.plain { background:none; border:0; padding:0; }
+        .panel.plain > .panel-head { padding:0 2px; }
+        .volume-card { background:#1d1d1d; border:1px solid #3a3a3a; border-radius:4px; margin-bottom:22px; overflow:hidden; }
+        .volume-head { background:#2a2a2a; padding:12px 14px; border-bottom:1px solid #3a3a3a; }
+        .volume-head .volume-title { margin:0; font-size:17px; }
+        .volume { display:grid; grid-template-columns:120px 1fr; gap:18px; padding:14px; }
         .volume-cover { width:105px; height:150px; object-fit:cover; background:#2a2a2a; border-radius:3px; }
         .volume-title { font-size:15px; font-weight:800; margin:2px 0 10px; color:#fff; }
         .chapter-list { list-style:none; padding:0; margin:0; }
@@ -69,7 +77,7 @@
 <body>
 
 <nav class="navbar">
-    <a href="/" class="logo">Ranobe Kingdom</a>
+    <a href="/" class="logo"><img th:src="${siteLogoSmall}" alt="LN"> Ranobe Kingdom</a>
 </nav>
 
 <div class="container">
@@ -79,20 +87,20 @@
         <div class="top-actions">
             <!-- Chủ truyện: sang trang chỉnh sửa -->
             <a th:if="${isOwner}"
-               th:href="@{'/products/' + ${product.productId} + '/edit'}"
+               th:href="@{${product.path + '/edit'}}"
                class="edit-btn">✏️ Chỉnh sửa</a>
 
             <!-- Mod/Admin: ẩn hoặc khôi phục -->
             <th:block th:if="${isStaff}">
                 <form th:if="${!product.deleted}"
-                      th:action="@{'/products/' + ${product.productId} + '/hide'}"
+                      th:action="@{'/truyen/' + ${product.productId} + '/hide'}"
                       method="post"
                       onsubmit="return confirm('Ẩn truyện này?');">
                     <button type="submit" class="btn-admin danger">Ẩn truyện</button>
                 </form>
 
                 <form th:if="${product.deleted}"
-                      th:action="@{'/products/' + ${product.productId} + '/restore'}"
+                      th:action="@{'/truyen/' + ${product.productId} + '/restore'}"
                       method="post">
                     <button type="submit" class="btn-admin primary">Khôi phục truyện</button>
                 </form>
@@ -111,7 +119,8 @@
             <h1 th:text="${product.title}">Tên truyện</h1>
 
             <div class="tags">
-                <span class="tag"
+                <span class="tag" th:each="c : ${product.categories}" th:text="${c.categoryName}">Thể loại</span>
+                <span class="tag" th:if="${#sets.isEmpty(product.categories)}"
                       th:text="${product.category != null ? product.category.categoryName : 'Chưa phân loại'}">
                     Thể loại
                 </span>
@@ -139,7 +148,7 @@
 
             <div class="actions" th:if="${volumes != null and !#lists.isEmpty(volumes) and !#lists.isEmpty(volumes[0].chapters)}">
                 <a class="btn btn-read"
-                   th:href="@{'/products/chapter/' + ${volumes[0].chapters[0].chapterId}}">
+                   th:href="@{${product.path + '/chuong/' + volumes[0].chapters[0].chapterId + '/' + volumes[0].chapters[0].slug}}">
                     Đọc tiếp
                 </a>
             </div>
@@ -156,7 +165,10 @@
             </div>
             <div class="meta">
                 <small>Thể loại</small>
-                <b th:text="${product.category != null ? product.category.categoryName : '-'}">-</b>
+                <b th:if="${!#sets.isEmpty(product.categories)}"
+                   th:text="${#strings.listJoin(product.categories.![categoryName], ', ')}">-</b>
+                <b th:if="${#sets.isEmpty(product.categories)}"
+                   th:text="${product.category != null ? product.category.categoryName : '-'}">-</b>
             </div>
             <div class="meta">
                 <small>Trạng thái</small>
@@ -174,38 +186,40 @@
                 th:if="${#strings.length(product.summary) > 350}">Xem thêm</button>
     </section>
 
-    <section class="panel">
+    <section class="panel plain">
         <div class="panel-head">
             <h2>Danh sách tập</h2>
         </div>
 
-        <div th:each="vol, iterStat : ${volumes}" class="volume">
-            <img class="volume-cover"
-                 th:if="${!#strings.isEmpty(vol.coverImage)}"
-                 th:src="${vol.coverImage}"
-                 alt="Bìa tập">
-
-            <img class="volume-cover"
-                 th:if="${#strings.isEmpty(vol.coverImage)}"
-                 th:src="${#strings.isEmpty(product.coverImage)} ? @{/images/default-cover.webp} : ${product.coverImage}"
-                 alt="Bìa tập">
-
-            <div>
+        <div th:each="vol, iterStat : ${volumes}" class="volume-card">
+            <div class="volume-head">
                 <div class="volume-title"
-                     th:text="${!#strings.isEmpty(vol.title) ? vol.title : 'Tập ' + iterStat.count}">
-                    Tập 1
+                     th:text="${!#strings.isEmpty(vol.title) ? vol.title : 'Tập ' + iterStat.count}">Tập 1</div>
+            </div>
+            <div class="volume">
+                <img class="volume-cover"
+                     th:if="${!#strings.isEmpty(vol.coverImage)}"
+                     th:src="${vol.coverImage}"
+                     alt="Bìa tập">
+
+                <img class="volume-cover"
+                     th:if="${#strings.isEmpty(vol.coverImage)}"
+                     th:src="${#strings.isEmpty(product.coverImage)} ? @{/images/default-cover.webp} : ${product.coverImage}"
+                     alt="Bìa tập">
+
+                <div>
+                    <p class="volume-summary" th:if="${!#strings.isEmpty(vol.summary)}" th:text="${vol.summary}"></p>
+
+                    <ul class="chapter-list">
+                        <li th:each="chap, chapStat : ${vol.chapters}">
+                            <a th:href="@{${product.path + '/chuong/' + chap.chapterId + '/' + chap.slug}}"
+                               th:text="${!#strings.isEmpty(chap.title) ? chap.title : 'Chương ' + chapStat.count}">
+                                Chương
+                            </a>
+                        </li>
+                    </ul>
+                    <div class="empty-note" th:if="${#lists.isEmpty(vol.chapters)}">Chưa có chương nào.</div>
                 </div>
-
-                <p class="volume-summary" th:if="${!#strings.isEmpty(vol.summary)}" th:text="${vol.summary}"></p>
-
-                <ul class="chapter-list">
-                    <li th:each="chap, chapStat : ${vol.chapters}">
-                        <a th:href="@{'/products/chapter/' + ${chap.chapterId}}"
-                           th:text="${!#strings.isEmpty(chap.title) ? chap.title : 'Chương ' + chapStat.count}">
-                            Chương
-                        </a>
-                    </li>
-                </ul>
             </div>
         </div>
 

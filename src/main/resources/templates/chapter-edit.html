@@ -2,11 +2,14 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
+    <link rel="icon" type="image/png" th:href="${siteLogoSmall}">
     <title>Sửa Chương</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background-color: #121212; color: #e0e0e0; }
         .navbar { background-color: #1e1e1e; padding: 15px 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.5); }
         .logo { font-size: 22px; font-weight: bold; color: #4da6ff; text-decoration: none; }
+        .logo { display: inline-flex; align-items: center; gap: 10px; }
+        .logo img { width: 38px; height: 38px; border-radius: 10px; display: block; }
         .form-container { max-width: 800px; margin: 40px auto; padding: 30px; background: #1e1e1e; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
         h2 { color: #ffca28; margin-top: 0; }
         .form-group { margin-bottom: 20px; }
@@ -51,18 +54,18 @@
 <body>
 
     <nav class="navbar">
-        <a href="/" class="logo">📚 Ranobe Kingdom</a>
+        <a href="/" class="logo"><img th:src="${siteLogoSmall}" alt="LN"> Ranobe Kingdom</a>
     </nav>
 
     <div class="form-container">
-        <a th:href="@{'/products/' + ${chapter.volume.product.productId} + '/edit'}" class="back-link">← Hủy và quay lại</a>
+        <a th:href="@{${chapter.volume.product.path + '/edit'}}" class="back-link">← Hủy và quay lại</a>
         <h2>Sửa Chương</h2>
         <p style="color: #aaa;">
             Bộ truyện: <strong style="color: #fff;" th:text="${chapter.volume.product.title}">Truyện</strong>
             | Tập: <strong style="color: #fff;" th:text="${!#strings.isEmpty(chapter.volume.title) ? chapter.volume.title : '—'}">Tập</strong>
         </p>
 
-        <form th:action="@{'/products/chapter/' + ${chapter.chapterId} + '/edit'}" method="post">
+        <form th:action="@{${chapter.volume.product.path + '/chuong/' + chapter.chapterId + '/' + chapter.slug + '/edit'}}" method="post">
             <div class="form-group">
                 <label for="title">Tên Chương:</label>
                 <input type="text" id="title" name="title" th:value="${chapter.title}" required>
@@ -86,7 +89,7 @@
                 <div th:each="img, imgStat : ${images}" class="image-card" th:attr="data-image-id=${img.imageId}" draggable="true">
                     <span class="order-badge" th:text="${imgStat.count}">1</span>
                     <img th:src="${img.imageUrl}" alt="Ảnh chương"/>
-                    <form class="delete-form" th:action="@{'/products/chapter/image/' + ${img.imageId} + '/delete'}"
+                    <form class="delete-form" th:action="@{'/truyen/' + ${chapter.volume.product.productId} + '/chuong/image/' + ${img.imageId} + '/delete'}"
                           method="post" onsubmit="return confirm('Xóa ảnh này?');">
                         <button type="submit" class="btn-delete-img">🗑</button>
                     </form>
@@ -97,7 +100,7 @@
                 Chương này chưa có ảnh minh họa nào. Kéo thả các ảnh bên trên để đổi thứ tự sau khi thêm.
             </div>
 
-            <form class="upload-form" th:action="@{'/products/chapter/' + ${chapter.chapterId} + '/images'}"
+            <form class="upload-form" th:action="@{'/truyen/' + ${chapter.volume.product.productId} + '/chuong/' + ${chapter.chapterId} + '/images'}"
                   method="post" enctype="multipart/form-data" data-paste-zone>
                 <label class="upload-drop" for="imageFiles">
                     <strong>Chọn ảnh minh họa</strong>
@@ -113,6 +116,7 @@
 
     <script th:inline="javascript">
         const chapterId = /*[[${chapter.chapterId}]]*/ 0;
+        const productId = /*[[${chapter.volume.product.productId}]]*/ 0;
         const grid = document.getElementById('imageGrid');
         let draggedCard = null;
 
@@ -173,7 +177,7 @@
             const ids = [...grid.querySelectorAll('.image-card')]
                 .map(c => parseInt(c.dataset.imageId, 10));
 
-            fetch(`/products/chapter/${chapterId}/images/reorder`, {
+            fetch(`/truyen/${productId}/chuong/${chapterId}/images/reorder`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(ids)

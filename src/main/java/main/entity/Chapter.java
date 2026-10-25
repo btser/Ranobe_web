@@ -49,6 +49,8 @@ public class Chapter {
         this.context = context;
     }
     public String getTitle() { return this.title;}
+    /** Đuôi tiêu đề dùng trong link. */
+    public String getSlug() { return main.util.Slugs.slug(title, "chuong"); }
     public int getChapterId() { return chapterId; }
     public Volume getVolume() { return volume; }
     public String getContext() { return context; }

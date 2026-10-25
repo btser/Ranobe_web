@@ -2,7 +2,9 @@ package main.entity;
 
 import jakarta.persistence.*;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.time.LocalDateTime;
 
 @Entity
@@ -33,6 +35,13 @@ public class Product {
     @JoinColumn(name = "category_id")
     private Category category;
 
+    // Nhiều thể loại cho một truyện (bảng nối product_categories). "category" ở trên giữ làm thể loại chính.
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(name = "product_categories",
+            joinColumns = @JoinColumn(name = "product_id"),
+            inverseJoinColumns = @JoinColumn(name = "category_id"))
+    private Set<Category> categories = new LinkedHashSet<>();
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User uploader;
@@ -59,10 +68,15 @@ public class Product {
         this.volumes.add(volume);
     }
 
+    /** Đường dẫn đẹp của truyện: /truyen/{id}/{ten-truyen}. */
+    public String getPath() { return "/truyen/" + productId + "/" + main.util.Slugs.slug(title, "truyen"); }
+
     public String getSummary() { return summary; }
     public int getProductId() { return productId; }
     public String getTitle() { return title; }
     public Category getCategory() { return category; }
+    public Set<Category> getCategories() { return categories; }
+    public void setCategories(Set<Category> categories) { this.categories = categories; }
     public List<Volume> getVolumes() { return volumes; }
     public boolean isDeleted() { return isDeleted;}
     public String getAuthor() { return author; }
