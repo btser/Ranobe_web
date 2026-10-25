@@ -17,6 +17,8 @@
         .head .novel { font-size: 24px; font-weight: 700; color: #fff; text-decoration: none; display: inline-block; }
         .head .novel:hover { color: #4da6ff; }
         .head .chap { font-size: 18px; font-weight: 700; color: #f0f0f0; margin-top: 4px; }
+        .wip { font-size: 12px; font-weight: 600; color: #ffb86b; border: 1px solid #ffb86b; border-radius: 10px; padding: 1px 8px; margin-left: 8px; vertical-align: middle; }
+        .content blockquote { margin: 0 0 1.1em; padding: 8px 16px; border-left: 3px solid #4da6ff; background: #1f2733; color: #b9c4dc; }
         .head .meta { font-size: 14px; font-weight: 600; color: #ddd; margin-top: 6px; }
 
         .content { max-width: 1166px; margin: 0 auto; font-family: 'Noto Serif', 'Times New Roman', Georgia, serif; font-size: 18px;
@@ -40,7 +42,8 @@
 <div class="reader">
     <div class="head">
         <a class="novel" th:href="@{${chapter.volume.product.path}}" th:text="${chapter.volume.product.title}">Tên truyện</a>
-        <div class="chap" th:text="${chapter.title}">Chương 1</div>
+        <div class="chap"><span th:text="${chapter.title}">Chương 1</span>
+            <span class="wip" th:unless="${chapter.completed}">Chưa hoàn thành</span></div>
         <div class="meta">
             <span th:if="${!#strings.isEmpty(chapter.volume.title)}" th:text="${chapter.volume.title} + ' - '">Tập 1 - </span>Độ dài: <span th:text="${#numbers.formatInteger(wordCount, 1, 'COMMA')}">0</span> từ
         </div>
@@ -52,7 +55,8 @@
     </div>
 
     <!-- Nội dung: chữ và ảnh xen kẽ đúng vị trí -->
-    <div class="content">
+    <div class="content" th:if="${contentHtml != null}" th:utext="${contentHtml}"></div>
+    <div class="content" th:if="${contentHtml == null}">
         <th:block th:each="b : ${blocks}">
             <img th:if="${b.image}" th:src="${b.value}" alt="Ảnh minh họa"/>
             <p th:unless="${b.image}" th:text="${b.value}"></p>

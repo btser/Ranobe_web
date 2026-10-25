@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- Form dùng chung cho thêm / sửa chương -->
+<th:block th:fragment="form(action, pid, titleVal, completedVal, html, label, heading, backUrl)">
+<style>
+    .ce-wrap { max-width: 920px; margin: 30px auto; padding: 0 16px 60px; }
+    .ce-card { background: #1f2430; border: 1px solid #2d3445; border-radius: 14px; padding: 26px 28px; box-shadow: 0 8px 30px rgba(0,0,0,.4); }
+    .ce-card h1 { margin: 0 0 22px; font-size: 22px; color: #fff; }
+    .ce-field { margin-bottom: 20px; }
+    .ce-field > label { display: block; font-weight: 600; font-size: 14px; color: #dfe5f2; margin-bottom: 8px; }
+    .ce-field > label em { color: #ff6b6b; font-style: normal; }
+    .ce-input { width: 100%; box-sizing: border-box; background: #161a23; border: 1px solid #343c50; border-radius: 8px; color: #fff; padding: 11px 14px; font-size: 15px; }
+    .ce-input:focus { outline: none; border-color: #4da6ff; }
+    .ce-radios { display: flex; gap: 26px; flex-wrap: wrap; }
+    .ce-radios label { display: flex; align-items: center; gap: 8px; color: #dfe5f2; cursor: pointer; font-size: 15px; }
+    .ce-radios input { accent-color: #4da6ff; width: 17px; height: 17px; }
+    .ce-drop { border: 2px dashed #3a4258; border-radius: 10px; padding: 26px 16px; text-align: center; color: #9aa4bb; cursor: pointer; background: #181c26; transition: .15s; }
+    .ce-drop:hover, .ce-drop.over { border-color: #4da6ff; color: #4da6ff; background: #1a2230; }
+    .ce-drop svg { width: 30px; height: 30px; fill: currentColor; display: block; margin: 0 auto 8px; }
+    .ce-drop small { display: block; margin-top: 4px; opacity: .8; }
+    .ce-editor { border: 1px solid #343c50; border-radius: 8px; overflow: hidden; background: #161a23; }
+    .ce-tools { display: flex; flex-wrap: wrap; gap: 4px; padding: 8px; border-bottom: 1px solid #2d3445; background: #1b202b; }
+    .ce-tools button { background: transparent; border: 1px solid transparent; color: #cfd6e6; border-radius: 6px; min-width: 34px; height: 34px; cursor: pointer; font-size: 15px; padding: 0 8px; }
+    .ce-tools button:hover { background: #2a3142; border-color: #3a4258; }
+    .ce-tools .sep { width: 1px; background: #343c50; margin: 4px 6px; }
+    .ce-body { min-height: 360px; max-height: 70vh; overflow-y: auto; padding: 16px 18px; color: #e6e9f0; font-size: 16px; line-height: 1.7; outline: none; font-family: 'Noto Serif', Georgia, serif; }
+    .ce-body:empty:before { content: attr(data-ph); color: #6b7488; }
+    .ce-body p { margin: 0 0 1em; }
+    .ce-body img { display: block; max-width: 100%; margin: 12px auto; border-radius: 4px; }
+    .ce-body img.sel { outline: 2px solid #4da6ff; }
+    .ce-body blockquote { margin: 0 0 1em; padding: 8px 14px; border-left: 3px solid #4da6ff; background: #1b2230; color: #b9c4dc; }
+    .ce-foot { display: flex; justify-content: flex-end; gap: 18px; padding: 8px 14px; border-top: 1px solid #2d3445; color: #8a94ab; font-size: 13px; background: #1b202b; }
+    .ce-actions { display: flex; gap: 12px; margin-top: 8px; }
+    .ce-btn { background: #4da6ff; border: none; color: #07121f; font-weight: 700; font-size: 15px; padding: 12px 26px; border-radius: 8px; cursor: pointer; }
+    .ce-btn:hover { filter: brightness(1.1); }
+    .ce-btn:disabled { opacity: .5; cursor: wait; }
+    .ce-cancel { color: #9aa4bb; text-decoration: none; padding: 12px 18px; border-radius: 8px; border: 1px solid #343c50; }
+    .ce-cancel:hover { color: #fff; }
+    .ce-msg { color: #ffb86b; font-size: 13px; margin-top: 8px; min-height: 16px; }
+</style>
+
+<div class="ce-wrap">
+  <form class="ce-card" method="post" th:action="@{${action}}" id="ceForm">
+    <h1 th:text="${heading}">Thêm chương mới</h1>
+
+    <div class="ce-field">
+        <label for="ceTitle">Tên chương <em>*</em></label>
+        <input class="ce-input" id="ceTitle" name="title" type="text" required maxlength="200" th:value="${titleVal}" placeholder="Nhập tên chương">
+    </div>
+
+    <div class="ce-field">
+        <label>Tiến độ <em>*</em></label>
+        <div class="ce-radios">
+            <label><input type="radio" name="completed" value="true" th:checked="${completedVal}"> Đã hoàn thành</label>
+            <label><input type="radio" name="completed" value="false" th:checked="${!completedVal}"> Chưa hoàn thành</label>
+        </div>
+    </div>
+
+    <div class="ce-field">
+        <label>Upload Ảnh</label>
+        <div class="ce-drop" id="ceDrop">
+            <svg viewBox="0 0 24 24"><path d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
+            Kéo thả ảnh vào đây hoặc bấm để chọn
+            <small>Ảnh sẽ được chèn vào nội dung, tại vị trí con trỏ (có thể nằm giữa các đoạn văn)</small>
+        </div>
+        <input type="file" id="ceFile" accept="image/*" multiple hidden>
+        <div class="ce-msg" id="ceMsg"></div>
+    </div>
+
+    <div class="ce-field">
+        <label>Nội dung <em>*</em></label>
+        <div class="ce-editor">
+            <div class="ce-tools">
+                <button type="button" data-cmd="bold" title="Đậm (Ctrl+B)"><b>B</b></button>
+                <button type="button" data-cmd="italic" title="Nghiêng (Ctrl+I)"><i>I</i></button>
+                <button type="button" data-cmd="underline" title="Gạch chân (Ctrl+U)"><u>U</u></button>
+                <button type="button" data-cmd="strikeThrough" title="Gạch ngang"><s>S</s></button>
+                <span class="sep"></span>
+                <button type="button" id="ceImgBtn" title="Chèn ảnh">🖼</button>
+                <button type="button" id="ceNoteBtn" title="Ghi chú (khung trích dẫn)">📝</button>
+                <span class="sep"></span>
+                <button type="button" data-cmd="undo" title="Hoàn tác">↶</button>
+                <button type="button" data-cmd="redo" title="Làm lại">↷</button>
+                <button type="button" id="ceFindBtn" title="Tìm trong nội dung">🔍</button>
+                <button type="button" data-cmd="removeFormat" title="Xóa định dạng">Tx</button>
+            </div>
+            <div class="ce-body" id="ceBody" contenteditable="true" spellcheck="false" data-ph="Nhập nội dung chương..." th:utext="${html}"></div>
+            <div class="ce-foot"><span id="ceWords">0 từ</span><span id="ceChars">0 ký tự</span></div>
+        </div>
+        <input type="hidden" name="context" id="ceContext">
+    </div>
+
+    <div class="ce-actions">
+        <button class="ce-btn" type="submit" id="ceSubmit" th:text="${label}">Thêm chương</button>
+        <a class="ce-cancel" th:href="@{${backUrl}}">Hủy</a>
+    </div>
+  </form>
+</div>
+
+<script th:inline="javascript">
+(function () {
+    const uploadUrl = /*[[@{'/truyen/' + ${pid} + '/editor-image'}]]*/ '';
+    const body = document.getElementById('ceBody');
+    const msg = document.getElementById('ceMsg');
+    const drop = document.getElementById('ceDrop');
+    const fileInput = document.getElementById('ceFile');
+    let saved = null; // vị trí con trỏ gần nhất trong khung soạn thảo
+
+    function saveRange() {
+        const sel = window.getSelection();
+        if (sel.rangeCount && body.contains(sel.anchorNode)) saved = sel.getRangeAt(0).cloneRange();
+    }
+    ['keyup', 'mouseup', 'input', 'blur'].forEach(e => body.addEventListener(e, saveRange));
+
+    function restoreRange() {
+        body.focus();
+        const sel = window.getSelection();
+        if (saved) { sel.removeAllRanges(); sel.addRange(saved); }
+        else { const r = document.createRange(); r.selectNodeContents(body); r.collapse(false); sel.removeAllRanges(); sel.addRange(r); }
+    }
+
+    function counts() {
+        const t = (body.innerText || '').replace(/ /g, ' ').trim();
+        document.getElementById('ceWords').textContent = (t ? t.split(/\s+/).length : 0).toLocaleString('vi-VN') + ' từ';
+        document.getElementById('ceChars').textContent = t.length.toLocaleString('vi-VN') + ' ký tự';
+    }
+    body.addEventListener('input', counts);
+    counts();
+
+    // Thanh công cụ
+    document.querySelectorAll('.ce-tools [data-cmd]').forEach(b => {
+        b.addEventListener('mousedown', e => e.preventDefault());
+        b.addEventListener('click', () => { body.focus(); document.execCommand(b.dataset.cmd, false, null); saveRange(); counts(); });
+    });
+    document.getElementById('ceNoteBtn').addEventListener('click', () => {
+        restoreRange();
+        const inQuote = document.queryCommandValue('formatBlock').toLowerCase() === 'blockquote';
+        document.execCommand('formatBlock', false, inQuote ? 'p' : 'blockquote');
+        saveRange();
+    });
+    document.getElementById('ceFindBtn').addEventListener('click', () => {
+        const q = prompt('Tìm trong nội dung:');
+        if (!q) return;
+        body.focus();
+        if (!window.find(q, false, false, true)) alert('Không tìm thấy "' + q + '"');
+    });
+    document.getElementById('ceImgBtn').addEventListener('click', () => { saveRange(); fileInput.click(); });
+
+    // Upload + chèn ảnh theo thứ tự
+    async function addFiles(files) {
+        const list = Array.from(files).filter(f => f.type.startsWith('image/'));
+        if (!list.length) { msg.textContent = 'Chỉ nhận file ảnh.'; return; }
+        const btn = document.getElementById('ceSubmit');
+        btn.disabled = true;
+        let ok = 0;
+        for (let i = 0; i < list.length; i++) {
+            msg.textContent = 'Đang tải ảnh ' + (i + 1) + '/' + list.length + '...';
+            try {
+                const fd = new FormData(); fd.append('file', list[i]);
+                const res = await fetch(uploadUrl, { method: 'POST', body: fd });
+                const data = await res.json();
+                if (data.success) { insertImage(data.url); ok++; } else { msg.textContent = 'Không tải được: ' + list[i].name; }
+            } catch (e) { msg.textContent = 'Lỗi mạng khi tải ' + list[i].name; }
+        }
+        if (ok === list.length) msg.textContent = 'Đã chèn ' + ok + ' ảnh.';
+        btn.disabled = false;
+        counts();
+    }
+    function insertImage(url) {
+        restoreRange();
+        const sel = window.getSelection();
+        const r = sel.getRangeAt(0);
+        r.deleteContents();
+        const p = document.createElement('p');
+        const img = document.createElement('img');
+        img.src = url;
+        p.appendChild(img);
+        // đặt ảnh sau khối chứa con trỏ để không chen vào giữa câu
+        let blk = r.startContainer;
+        while (blk && blk.parentNode !== body) blk = blk.parentNode;
+        if (blk && blk.parentNode === body) body.insertBefore(p, blk.nextSibling); else body.appendChild(p);
+        const nr = document.createRange(); nr.setStartAfter(p); nr.collapse(true);
+        sel.removeAllRanges(); sel.addRange(nr); saved = nr.cloneRange();
+    }
+
+    fileInput.addEventListener('change', () => { addFiles(fileInput.files); fileInput.value = ''; });
+    drop.addEventListener('click', () => fileInput.click());
+    ['dragenter', 'dragover'].forEach(e => drop.addEventListener(e, ev => { ev.preventDefault(); drop.classList.add('over'); }));
+    ['dragleave', 'drop'].forEach(e => drop.addEventListener(e, ev => { ev.preventDefault(); drop.classList.remove('over'); }));
+    drop.addEventListener('drop', ev => addFiles(ev.dataTransfer.files));
+    // thả ảnh thẳng vào khung soạn thảo
+    body.addEventListener('dragover', ev => ev.preventDefault());
+    body.addEventListener('drop', ev => {
+        if (ev.dataTransfer.files && ev.dataTransfer.files.length) { ev.preventDefault(); saveRange(); addFiles(ev.dataTransfer.files); }
+    });
+
+    // Dán: ảnh -> upload; chữ -> chỉ lấy chữ thường (không kéo theo định dạng lạ)
+    body.addEventListener('paste', ev => {
+        const cd = ev.clipboardData;
+        if (!cd) return;
+        const imgs = Array.from(cd.files || []).filter(f => f.type.startsWith('image/'));
+        ev.preventDefault();
+        if (imgs.length) { saveRange(); addFiles(imgs); return; }
+        const text = cd.getData('text/plain').replace(/\r/g, '');
+        const html = text.split(/\n+/).filter(l => l.trim()).map(l => '<p>' + l.replace(/&/g, '&amp;').replace(/</g, '&lt;') + '</p>').join('');
+        document.execCommand('insertHTML', false, html);
+        counts();
+    });
+
+    // Gửi form
+    document.getElementById('ceForm').addEventListener('submit', ev => {
+        const html = body.innerHTML.trim();
+        if (!(body.innerText || '').trim() && !body.querySelector('img')) {
+            ev.preventDefault(); msg.textContent = 'Nội dung chương đang trống.'; body.focus(); return;
+        }
+        document.getElementById('ceContext').value = html;
+    });
+})();
+</script>
+</th:block>
+</body>
+</html>

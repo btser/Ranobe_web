@@ -41,6 +41,13 @@ public class Chapter {
 
     private String title;
 
+    /** Tiến độ: true = đã hoàn thành; null (chương cũ) coi như đã hoàn thành. */
+    @Column(name = "is_completed")
+    private Boolean completed = Boolean.TRUE;
+
+    public boolean isCompleted() { return completed == null || completed; }
+    public void setCompleted(boolean completed) { this.completed = completed; }
+
     public Chapter() {}
 
     public Chapter(int chapterId, Volume volume, String context) {

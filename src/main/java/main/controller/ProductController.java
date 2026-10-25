@@ -428,7 +428,8 @@ public class ProductController {
 
     @PostMapping("/{pid}/{pslug}/tap/{volumeId}/{vslug}/add-chapter")
     public String saveChapter(@PathVariable("volumeId") int volumeId, @RequestParam("title") String title,
-        @RequestParam("context") String context, HttpSession session) {
+        @RequestParam("context") String context,
+        @RequestParam(value = "completed", defaultValue = "true") boolean completed, HttpSession session) {
 
             User currentUser = (User) session.getAttribute("loggedInUser");
             Volume volume = volumeRepository.findByIdWithProductUploader(volumeId).orElse(null);
@@ -437,7 +438,8 @@ public class ProductController {
                 Chapter chapter = new Chapter();
                 chapter.setVolume(volume);
                 chapter.setTitle(title);
-                chapter.setContext(context);
+                chapter.setContext(main.service.ChapterContent.sanitize(context));
+                chapter.setCompleted(completed);
                 chapter.setDeleted(false);
 
                 int maxOrder = chapterRepository.findMaxSortOrderByVolumeId(volumeId);
@@ -485,15 +487,20 @@ public class ProductController {
 
             List<ChapterImage> images = chapterImageRepository.findByChapterChapterIdOrderBySortOrderAsc(chapterId);
 
+            List<String> extra = new ArrayList<>();
+            for (ChapterImage im : images) {
+                extra.add(im.getImageUrl());
+            }
             model.addAttribute("chapter", chapter);
-            model.addAttribute("images", images);
+            model.addAttribute("editorHtml", main.service.ChapterContent.toEditorHtml(chapter.getContext(), extra));
             return "chapter-edit";
     }
 
     @PostMapping("/{pid}/{pslug}/chuong/{chapterId}/{cslug}/edit")
     public String editChapterContent(@PathVariable("chapterId") int chapterId,
         @RequestParam("title") String title,
-        @RequestParam("context") String context, HttpSession session) {
+        @RequestParam("context") String context,
+        @RequestParam(value = "completed", defaultValue = "true") boolean completed, HttpSession session) {
 
             User currentUser = (User) session.getAttribute("loggedInUser");
             Chapter chapter = chapterRepository.findByIdWithVolumeProductUploader(chapterId).orElse(null);
@@ -506,7 +513,10 @@ public class ProductController {
             if (cleanTitle != null) {
                 chapter.setTitle(cleanTitle);
             }
-            chapter.setContext(context);
+            chapter.setContext(main.service.ChapterContent.sanitize(context));
+            chapter.setCompleted(completed);
+            // Ảnh gắn riêng cũ đã được đưa vào nội dung trong khung soạn thảo -> bỏ danh sách ảnh riêng
+            chapter.getImages().clear();
             chapterRepository.save(chapter);
             touchProduct(chapter.getVolume().getProduct().getProductId());
 
@@ -528,6 +538,26 @@ public class ProductController {
         }
 
         return "redirect:/";
+    }
+
+    // Tải ảnh lên từ khung soạn thảo (kéo thả / dán / chọn file) - trả về link ảnh để chèn vào nội dung
+    @PostMapping("/{pid}/editor-image")
+    @ResponseBody
+    public Map<String, Object> uploadEditorImage(@PathVariable("pid") int pid,
+        @RequestParam("file") MultipartFile file, HttpSession session) {
+
+            Map<String, Object> result = new HashMap<>();
+            User currentUser = (User) session.getAttribute("loggedInUser");
+            Product product = productRepository.findByIdWithDetails(pid).orElse(null);
+            if (!isOwner(currentUser, product) || file == null || file.isEmpty()) {
+                result.put("success", false);
+                return result;
+            }
+            String ct = file.getContentType();
+            String url = (ct != null && ct.startsWith("image/")) ? uploadImage(file, "chapters/p" + pid) : null;
+            result.put("success", url != null);
+            result.put("url", url);
+            return result;
     }
 
     // Add illustrations into chapter
@@ -687,6 +717,7 @@ public class ProductController {
         model.addAttribute("images", images);
         // Nội dung chia khối chữ/ảnh để ảnh nằm đúng vị trí giữa các đoạn văn
         model.addAttribute("blocks", main.service.ChapterContent.parse(chapter.getContext()));
+        model.addAttribute("contentHtml", main.service.ChapterContent.htmlForReader(chapter.getContext()));
         model.addAttribute("wordCount", main.service.ChapterContent.wordCount(chapter.getContext()));
         return "chapter-detail";
     }

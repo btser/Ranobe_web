@@ -259,6 +259,7 @@
                             <a th:href="@{${product.path + '/chuong/' + chap.chapterId + '/' + chap.slug}}"
                                th:text="${!#strings.isEmpty(chap.title) ? chap.title : 'Chương ' + chapStat.count}"
                                class="c-title">Chương 1</a>
+                            <span th:unless="${chap.completed}" style="font-size:11px;color:#ffb86b;border:1px solid #ffb86b;border-radius:9px;padding:0 6px;margin-left:6px;white-space:nowrap">Chưa hoàn thành</span>
 
                             <a th:href="@{${product.path + '/chuong/' + chap.chapterId + '/' + chap.slug + '/edit'}}"
                                class="icon-btn" title="Sửa nội dung">✏️</a>
