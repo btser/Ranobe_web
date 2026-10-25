@@ -147,8 +147,8 @@
             <div class="works">
                 <a class="work" th:each="p : ${products}" th:href="@{${p.path}}">
                     <div class="thumb">
-                        <img th:src="${#strings.isEmpty(p.coverImage)} ? @{/images/default-cover.webp} : ${p.coverImage}"
-                             onerror="this.onerror=null;this.src='/images/default-cover.webp'"
+                        <img th:src="${#strings.isEmpty(p.coverImage)} ? ${siteDefaultCover} : ${p.coverImage}"
+                             th:data-fallback="${siteDefaultCover}" onerror="this.onerror=null;this.src=this.dataset.fallback"
                              loading="lazy" alt="Bìa"/>
                     </div>
                     <div class="work-body">

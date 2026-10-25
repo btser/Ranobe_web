@@ -110,8 +110,8 @@
         <div class="cover-wrap">
             <div class="label">Truyện dịch</div>
             <img class="cover"
-                 th:src="${#strings.isEmpty(product.coverImage)} ? @{/images/default-cover.webp} : ${product.coverImage}"
-                 onerror="this.onerror=null;this.src='/images/default-cover.webp'"
+                 th:src="${#strings.isEmpty(product.coverImage)} ? ${siteDefaultCover} : ${product.coverImage}"
+                 th:data-fallback="${siteDefaultCover}" onerror="this.onerror=null;this.src=this.dataset.fallback"
                  alt="Ảnh bìa">
         </div>
 
@@ -204,7 +204,7 @@
 
                 <img class="volume-cover"
                      th:if="${#strings.isEmpty(vol.coverImage)}"
-                     th:src="${#strings.isEmpty(product.coverImage)} ? @{/images/default-cover.webp} : ${product.coverImage}"
+                     th:src="${#strings.isEmpty(product.coverImage)} ? ${siteDefaultCover} : ${product.coverImage}"
                      alt="Bìa tập">
 
                 <div>

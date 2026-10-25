@@ -86,8 +86,8 @@
                th:href="@{${product.path}}" class="novel-card">
 
                 <div class="cover">
-                    <img th:src="${#strings.isEmpty(product.coverImage)} ? @{/images/default-cover.webp} : ${product.coverImage}"
-                         onerror="this.onerror=null;this.src='/images/default-cover.webp'"
+                    <img th:src="${#strings.isEmpty(product.coverImage)} ? ${siteDefaultCover} : ${product.coverImage}"
+                         th:data-fallback="${siteDefaultCover}" onerror="this.onerror=null;this.src=this.dataset.fallback"
                          loading="lazy" alt="Ảnh bìa"/>
 
                     <span class="badge-hidden" th:if="${product.status != null and product.status.name() != 'PUBLIC'}"

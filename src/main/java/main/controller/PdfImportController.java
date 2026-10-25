@@ -125,6 +125,7 @@ public class PdfImportController {
                 return "volume-import";
             }
 
+            registerJob(token, session, volumeId);
             model.addAttribute("volume", volume);
             model.addAttribute("product", volume.getProduct());
             model.addAttribute("token", token);
@@ -169,6 +170,10 @@ public class PdfImportController {
 
         String token = p.get("token");
         if (token == null || !TOKEN.matcher(token).matches()) {
+            return "redirect:" + editPath(volume) + "?importError=1";
+        }
+        // Token chỉ dùng được 1 lần, đúng người tạo, đúng tập, chưa hết hạn (chặn bấm lưu trùng / dùng token người khác)
+        if (!consumeJob(token, session, volumeId)) {
             return "redirect:" + editPath(volume) + "?importError=1";
         }
         Path tmpDir = tmpRoot().resolve(token).normalize();
@@ -309,6 +314,27 @@ public class PdfImportController {
     }
 
     // ---------- helpers ----------
+
+    private static final long JOB_TTL_MS = 2 * 60 * 60 * 1000L;
+    private static final java.util.concurrent.ConcurrentHashMap<String, long[]> JOBS = new java.util.concurrent.ConcurrentHashMap<>();
+
+    private static int sessionUserId(HttpSession session) {
+        User u = (User) session.getAttribute("loggedInUser");
+        return u == null ? -1 : u.getUserId();
+    }
+
+    /** Ghi nhận lượt phân tích: token -> {userId, volumeId, hạn}. */
+    private static void registerJob(String token, HttpSession session, int volumeId) {
+        long now = System.currentTimeMillis();
+        JOBS.values().removeIf(j -> j[2] < now);
+        JOBS.put(token, new long[]{sessionUserId(session), volumeId, now + JOB_TTL_MS});
+    }
+
+    /** Lấy và hủy token (dùng 1 lần). Sai người / sai tập / hết hạn / đã dùng -> false. */
+    private static boolean consumeJob(String token, HttpSession session, int volumeId) {
+        long[] j = JOBS.remove(token);
+        return j != null && j[0] == sessionUserId(session) && j[1] == volumeId && j[2] >= System.currentTimeMillis();
+    }
 
     /** Link đẹp của trang chỉnh sửa truyện chứa tập này. */
     private static String editPath(Volume volume) {
