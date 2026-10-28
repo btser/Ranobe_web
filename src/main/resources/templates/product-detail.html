@@ -2,11 +2,12 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="icon" type="image/png" th:href="${siteLogoSmall}">
     <title th:text="${product?.title != null ? product.title : 'Chi tiết truyện'}">Chi tiết truyện</title>
     <style>
         body { margin:0; font-family:'Segoe UI',Tahoma,sans-serif; background:#111; color:#f2f2f2; }
-        .navbar { background:#1b1b1b; padding:14px 28px; border-bottom:1px solid #303030; }
+        .navbar { position:sticky; top:0; z-index:1000; background:#1b1b1b; padding:14px 28px; border-bottom:1px solid #303030; }
         .logo { color:#fff; text-decoration:none; font-weight:800; font-size:20px; }
         .logo { display: inline-flex; align-items: center; gap: 10px; }
         .logo img { width: 38px; height: 38px; border-radius: 10px; display: block; }
@@ -18,6 +19,9 @@
         .label { background:#3aa68b; color:#fff; text-align:center; padding:8px 10px; border-radius:3px; font-weight:800; margin-bottom:16px; }
         .cover { width:170px; height:245px; object-fit:cover; background:#2a2a2a; display:block; }
         .info h1 { margin:0 0 10px; font-size:26px; color:#fff; line-height:1.2; }
+        .info a.info-link, .info a.tag { color:inherit; text-decoration:none; }
+        .info a.info-link:hover, .info a.tag:hover { color:#4da6ff; text-decoration:underline; }
+        .info a.info-link.banned-name, .info a.info-link.banned-name:hover { color:#ff8585; text-decoration:line-through; }
         .tags { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
         .tag { background:#303030; color:#fff; border-radius:999px; padding:3px 10px; font-size:12px; }
         .line { margin:10px 0; font-size:14px; }
@@ -56,6 +60,7 @@
         .chapter-list { list-style:none; padding:0; margin:0; }
         .chapter-list li { display:flex; justify-content:space-between; gap:12px; padding:7px 8px; }
         .chapter-list li:nth-child(even) { background:#242424; }
+        .chapter-list.is-collapsed li:nth-child(n+6) { display:none; }
         .chapter-list a { color:#fff; text-decoration:none; }
         .chapter-list a:hover { color:#4da6ff; }
         .empty-note { color:#999; font-style:italic; padding:10px 0; }
@@ -116,24 +121,31 @@
         </div>
 
         <div class="info">
-            <h1 th:text="${product.title}">Tên truyện</h1>
+            <h1><a class="info-link" th:href="@{/tim-kiem(q=${product.title})}" th:text="${product.title}">Tên truyện</a></h1>
 
             <div class="tags">
-                <span class="tag" th:each="c : ${product.categories}" th:text="${c.categoryName}">Thể loại</span>
-                <span class="tag" th:if="${#sets.isEmpty(product.categories)}"
-                      th:text="${product.category != null ? product.category.categoryName : 'Chưa phân loại'}">
-                    Thể loại
-                </span>
+                <a class="tag" th:each="c : ${product.categories}"
+                   th:href="@{/tim-kiem(categoryId=${c.categoryId})}" th:text="${c.categoryName}">Thể loại</a>
+                <th:block th:if="${#sets.isEmpty(product.categories)}">
+                    <a class="tag" th:if="${product.category != null}"
+                       th:href="@{/tim-kiem(categoryId=${product.category.categoryId})}"
+                       th:text="${product.category.categoryName}">Thể loại</a>
+                    <span class="tag" th:if="${product.category == null}">Chưa phân loại</span>
+                </th:block>
             </div>
 
             <div class="line">
                 <strong>Tác giả:</strong>
-                <span th:text="${!#strings.isEmpty(product.author) ? product.author : 'Chưa cập nhật'}">-</span>
+                <a class="info-link" th:if="${!#strings.isEmpty(product.author)}"
+                   th:href="@{/tim-kiem(author=${product.author})}" th:text="${product.author}">Tác giả</a>
+                <span th:if="${#strings.isEmpty(product.author)}">Chưa cập nhật</span>
             </div>
 
             <div class="line">
                 <strong>Họa sĩ:</strong>
-                <span th:text="${!#strings.isEmpty(product.artist) ? product.artist : 'Chưa cập nhật'}">-</span>
+                <a class="info-link" th:if="${!#strings.isEmpty(product.artist)}"
+                   th:href="@{/tim-kiem(artist=${product.artist})}" th:text="${product.artist}">Họa sĩ</a>
+                <span th:if="${#strings.isEmpty(product.artist)}">Chưa cập nhật</span>
             </div>
 
             <div class="line">
@@ -143,13 +155,18 @@
 
             <div class="line">
                 <strong>Người đăng:</strong>
-                <span th:text="${product.uploader != null ? product.uploader.userName : 'Ẩn danh'}">Ẩn danh</span>
+                <a class="info-link" th:if="${product.uploader != null}"
+                   th:classappend="${uploaderBanned == true} ? 'banned-name'"
+                   th:href="@{/users/{id}(id=${product.uploader.userId})}"
+                   th:text="${product.uploader.userName}">Người đăng</a>
+                <span th:if="${product.uploader == null}">Ẩn danh</span>
             </div>
 
-            <div class="actions" th:if="${volumes != null and !#lists.isEmpty(volumes) and !#lists.isEmpty(volumes[0].chapters)}">
+            <div class="actions" th:if="${firstChapterPath != null}">
                 <a class="btn btn-read"
-                   th:href="@{${product.path + '/chuong/' + volumes[0].chapters[0].chapterId + '/' + volumes[0].chapters[0].slug}}">
-                    Đọc tiếp
+                   id="continueReading" th:data-product-id="${product.productId}"
+                   th:href="@{${firstChapterPath}}">
+                    Đọc từ đầu
                 </a>
             </div>
         </div>
@@ -210,9 +227,10 @@
                 <div>
                     <p class="volume-summary" th:if="${!#strings.isEmpty(vol.summary)}" th:text="${vol.summary}"></p>
 
-                    <ul class="chapter-list">
+                    <ul class="chapter-list" th:id="${'volume-chapters-' + vol.volumeId}">
                         <li th:each="chap, chapStat : ${vol.chapters}">
                             <a th:href="@{${product.path + '/chuong/' + chap.chapterId + '/' + chap.slug}}"
+                               th:data-chapter-id="${chap.chapterId}"
                                th:text="${!#strings.isEmpty(chap.title) ? chap.title : 'Chương ' + chapStat.count}">
                                 Chương
                             </a>
@@ -227,7 +245,26 @@
     </section>
 </div>
 
+<script th:src="@{/js/reading-storage.js}"></script>
+<script th:src="@{/js/continue-reading.js}"></script>
 <script>
+    document.querySelectorAll('.chapter-list').forEach(list => {
+        const count = list.children.length;
+        if (count <= 5) return;
+        list.classList.add('is-collapsed');
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'more-btn';
+        button.setAttribute('aria-controls', list.id);
+        button.setAttribute('aria-expanded', 'false');
+        button.textContent = `Xem tất cả (${count} chương)`;
+        button.addEventListener('click', () => {
+            const collapsed = list.classList.toggle('is-collapsed');
+            button.setAttribute('aria-expanded', String(!collapsed));
+            button.textContent = collapsed ? `Xem tất cả (${count} chương)` : 'Thu gọn';
+        });
+        list.after(button);
+    });
     const moreBtn = document.getElementById('summaryMore');
     if (moreBtn) {
         moreBtn.addEventListener('click', () => {

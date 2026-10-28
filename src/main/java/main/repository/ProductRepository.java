@@ -10,7 +10,8 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 
-public interface ProductRepository extends JpaRepository<Product, Integer> {
+public interface ProductRepository extends JpaRepository<Product, Integer>,
+        org.springframework.data.jpa.repository.JpaSpecificationExecutor<Product> {
 
     List<Product> findByIsDeletedFalse();
 

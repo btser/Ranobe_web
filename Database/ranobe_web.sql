@@ -129,3 +129,16 @@ BEGIN
         WHERE username = 'admin';
     END IF;
 END $$;
+
+BEGIN;
+
+ALTER TABLE accounts ALTER COLUMN username SET NOT NULL;
+ALTER TABLE accounts ALTER COLUMN email SET NOT NULL;
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_accounts_username_lower
+    ON accounts (LOWER(username));
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_accounts_email_lower
+    ON accounts (LOWER(email));
+
+COMMIT;

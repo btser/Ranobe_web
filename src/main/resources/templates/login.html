@@ -109,10 +109,12 @@
     <!-- ĐĂNG NHẬP -->
     <div class="form-box login">
         <h1 class="anim" style="--d:0">Đăng nhập</h1>
+        <p th:if="${param.registered}" role="status">Đăng ký thành công. Bạn có thể đăng nhập.</p>
+        <p th:if="${param.accountUnavailable}" class="error-msg" role="alert">Tài khoản đã bị khóa. Liên hệ admin để biết thêm thông tin.</p>
         <div th:if="${error}" class="error-msg" th:text="${error}"></div>
         <form th:action="@{/login}" method="post" autocomplete="on">
             <div class="field anim" style="--d:1">
-                <input type="text" name="username" required placeholder=" " autocomplete="username">
+                <input type="text" name="username" th:value="${formUsername}" required placeholder=" " autocomplete="username">
                 <label>Tên đăng nhập</label>
                 <svg viewBox="0 0 24 24"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0 2c-4 0-8 2-8 5v3h16v-3c0-3-4-5-8-5z"/></svg>
             </div>
@@ -126,7 +128,7 @@
         </form>
     </div>
     <div class="info login">
-        <h2 class="anim" style="--d:0">Chào mừng<br>trở lại!</h2>
+        <h2 class="anim" style="--d:0">WELCOME HOME<br>CHEATER!</h2>
         <p class="anim" style="--d:1">Rất vui được gặp lại bạn. Đăng nhập để tiếp tục đọc và đăng truyện.</p>
     </div>
 
@@ -150,7 +152,7 @@
                 <svg viewBox="0 0 24 24"><path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z"/></svg>
             </div>
             <div class="field anim" style="--d:3">
-                <input type="text" name="username" required placeholder=" " autocomplete="username">
+                <input type="text" name="username" th:value="${formUsername}" required placeholder=" " autocomplete="username">
                 <label>Tên đăng nhập</label>
                 <svg viewBox="0 0 24 24"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0 2c-4 0-8 2-8 5v3h16v-3c0-3-4-5-8-5z"/></svg>
             </div>

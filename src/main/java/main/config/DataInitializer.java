@@ -43,7 +43,7 @@ public class DataInitializer implements CommandLineRunner {
             Account admin = new Account();
             admin.setUsername("admin");
             admin.setEmail("admin@ranobe.local");
-            admin.setPassword("admin123");
+            admin.setPassword(main.service.Passwords.hash("admin123"));
             admin.setRole(AccountRole.ADMIN);
             admin.setUser(adminUser);
             accountRepository.save(admin);

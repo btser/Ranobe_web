@@ -11,6 +11,16 @@ import java.util.Optional;
 
 @Repository
 public interface ChapterRepository extends JpaRepository<Chapter, Integer> {
+
+    @org.springframework.data.jpa.repository.Modifying(clearAutomatically = true)
+    @org.springframework.transaction.annotation.Transactional
+    @Query(value = "UPDATE chapters SET is_deleted = NOT COALESCE(is_deleted, FALSE) WHERE chapter_id = :id",
+           nativeQuery = true)
+    int toggleDeletedById(@Param("id") int id);
+
+    @Query(value = "SELECT COALESCE(is_deleted, FALSE) FROM chapters WHERE chapter_id = :id", nativeQuery = true)
+    Boolean findDeletedFlagById(@Param("id") int id);
+
     List<Chapter> findByIsDeletedFalse();
 
     List<Chapter> findByVolumeVolumeIdAndIsDeletedFalseOrderBySortOrderAsc(int volumeId);

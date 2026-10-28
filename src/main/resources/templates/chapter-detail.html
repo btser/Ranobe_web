@@ -4,73 +4,72 @@
     <meta charset="UTF-8">
     <link rel="icon" type="image/png" th:href="${siteLogoSmall}">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title th:text="${chapter.title} + ' - ' + ${chapter.volume.product.title}">Đọc Truyện</title>
-    <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background: #1b1b1b; color: #e0e0e0; }
-        .navbar { background: #1e1e1e; padding: 15px 30px; box-shadow: 0 2px 8px rgba(0,0,0,.5); }
-        .logo { font-size: 22px; font-weight: bold; color: #4da6ff; text-decoration: none; }
-        .logo { display: inline-flex; align-items: center; gap: 10px; }
-        .logo img { width: 38px; height: 38px; border-radius: 10px; display: block; }
-
-        .reader { max-width: 1170px; margin: 0 auto; padding: 30px 16px 60px; background: #222; min-height: 100vh; box-sizing: border-box; }
-        .head { text-align: center; margin-bottom: 40px; }
-        .head .novel { font-size: 24px; font-weight: 700; color: #fff; text-decoration: none; display: inline-block; }
-        .head .novel:hover { color: #4da6ff; }
-        .head .chap { font-size: 18px; font-weight: 700; color: #f0f0f0; margin-top: 4px; }
-        .wip { font-size: 12px; font-weight: 600; color: #ffb86b; border: 1px solid #ffb86b; border-radius: 10px; padding: 1px 8px; margin-left: 8px; vertical-align: middle; }
-        .content blockquote { margin: 0 0 1.1em; padding: 8px 16px; border-left: 3px solid #4da6ff; background: #1f2733; color: #b9c4dc; }
-        .head .meta { font-size: 14px; font-weight: 600; color: #ddd; margin-top: 6px; }
-
-        .content { max-width: 1166px; margin: 0 auto; font-family: 'Noto Serif', 'Times New Roman', Georgia, serif; font-size: 18px;
-                   line-height: 1.7; color: #d4d4d4; text-align: justify; }
-        .content p { margin: 0 0 1.1em; white-space: pre-line; word-wrap: break-word; }
-        .content img { display: block; max-width: 100%; margin: 1.4em auto; border-radius: 4px; }
-
-        .pager { display: flex; align-items: center; justify-content: space-between; border: 1px solid #555; border-radius: 40px;
-                 padding: 10px 40px; margin: 40px 0 0; }
-        .pager a, .pager span { display: flex; align-items: center; justify-content: center; width: 80px; height: 32px; color: #bbb; text-decoration: none; }
-        .pager a:hover { color: #4da6ff; }
-        .pager .off { color: #444; cursor: default; }
-        .pager svg { width: 26px; height: 26px; fill: currentColor; }
-
-        @media (max-width: 600px) { .content { font-size: 17px; } .pager { padding: 8px 16px; } }
-    </style>
+    <title th:text="${chapter.title} + ' - ' + ${chapter.volume.product.title}">Đọc truyện</title>
+    <link rel="stylesheet" th:href="@{/css/reader.css}">
+    <script th:src="@{/js/reading-storage.js}"></script>
+    <script defer th:src="@{/js/reader.js}"></script>
 </head>
 <body>
-<nav class="navbar"><a href="/" class="logo"><img th:src="${siteLogoSmall}" alt="LN"> Ranobe Kingdom</a></nav>
-
-<div class="reader">
-    <div class="head">
+<nav class="reader-navbar"><a href="/" class="reader-logo"><img th:src="${siteLogoSmall}" alt="">Ranobe Kingdom</a></nav>
+<main class="reader" id="reader" th:attr="data-product-id=${chapter.volume.product.productId},data-chapter-id=${chapter.chapterId}">
+    <header class="reader-head">
         <a class="novel" th:href="@{${chapter.volume.product.path}}" th:text="${chapter.volume.product.title}">Tên truyện</a>
-        <div class="chap"><span th:text="${chapter.title}">Chương 1</span>
-            <span class="wip" th:unless="${chapter.completed}">Chưa hoàn thành</span></div>
-        <div class="meta">
-            <span th:if="${!#strings.isEmpty(chapter.volume.title)}" th:text="${chapter.volume.title} + ' - '">Tập 1 - </span>Độ dài: <span th:text="${#numbers.formatInteger(wordCount, 1, 'COMMA')}">0</span> từ
+        <h1 th:text="${chapter.title}">Tên chương</h1>
+        <div class="meta"><span th:if="${!#strings.isEmpty(chapter.volume.title)}" th:text="${chapter.volume.title} + ' · '"></span><span th:text="${#numbers.formatInteger(wordCount, 1, 'COMMA')}">0</span> từ</div>
+        <span class="wip" th:unless="${chapter.completed}">Chưa hoàn thành</span>
+        <p id="readingNotice" class="reader-notice" role="status" hidden></p>
+    </header>
+    <article class="reader-content" id="readerContent" aria-label="Nội dung chương">
+        <div th:if="${images != null and !#lists.isEmpty(images)}">
+            <img th:each="img : ${images}" th:src="${img.imageUrl}" alt="Ảnh minh họa">
         </div>
+        <div th:if="${contentHtml != null}" th:utext="${contentHtml}"></div>
+        <div th:if="${contentHtml == null}">
+            <th:block th:each="b : ${blocks}">
+                <img th:if="${b.image}" th:src="${b.value}" alt="Ảnh minh họa">
+                <p th:unless="${b.image}" th:text="${b.value}"></p>
+            </th:block>
+        </div>
+    </article>
+    <div class="reader-end" th:if="${readingNavigation.next == null}">Bạn đã đọc đến chương cuối hiện có.</div>
+</main>
+<nav class="reader-dock" aria-label="Điều hướng đọc truyện">
+    <div class="read-progress" role="progressbar" aria-label="Tiến độ chương" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="readProgress"></span></div>
+    <div class="reader-dock-inner">
+        <a th:if="${readingNavigation.previous != null}" th:href="@{${readingNavigation.previous.path}}" class="reader-control" title="Chương trước"><span class="symbol" aria-hidden="true">←</span><span>Chương trước</span></a>
+        <span th:if="${readingNavigation.previous == null}" class="reader-control" aria-disabled="true"><span class="symbol" aria-hidden="true">←</span><span>Chương trước</span></span>
+        <button type="button" class="reader-control" data-open-dialog="readerToc" aria-haspopup="dialog" aria-label="Mục lục" title="Mục lục"><span class="symbol" aria-hidden="true">☰</span><span>Mục lục</span></button>
+        <button type="button" class="reader-control" data-open-dialog="readerSettings" aria-haspopup="dialog" aria-label="Tùy chỉnh trang đọc" title="Tùy chỉnh trang đọc"><span class="symbol" aria-hidden="true">Aa</span><span>Tùy chỉnh</span></button>
+        <a th:if="${readingNavigation.next != null}" th:href="@{${readingNavigation.next.path}}" class="reader-control" title="Chương sau"><span class="symbol" aria-hidden="true">→</span><span>Chương sau</span></a>
+        <span th:if="${readingNavigation.next == null}" class="reader-control" aria-disabled="true"><span class="symbol" aria-hidden="true">→</span><span>Chương sau</span></span>
     </div>
-
-    <!-- Ảnh gắn riêng cho chương (ví dụ chương Minh họa) -->
-    <div class="content" th:if="${images != null and !#lists.isEmpty(images)}">
-        <img th:each="img : ${images}" th:src="${img.imageUrl}" alt="Ảnh minh họa"/>
+</nav>
+<dialog id="readerSettings" class="reader-dialog" aria-labelledby="settingsHeading">
+    <header class="dialog-head"><h2 id="settingsHeading">Tùy chỉnh</h2><button type="button" class="close-dialog" data-close-dialog aria-label="Đóng">×</button></header>
+    <div class="dialog-body">
+        <label class="reader-setting"><span class="setting-label"><span>Cỡ chữ</span><output id="fontSizeValue">20 px</output></span><input id="fontSize" type="range" min="14" max="30" step="1" value="20"></label>
+        <label class="reader-setting"><span class="setting-label"><span>Giãn dòng</span><output id="lineHeightValue">1.8</output></span><input id="lineHeight" type="range" min="1.4" max="2.4" step="0.1" value="1.8"></label>
+        <div class="reader-setting"><span class="setting-label">Màu nền</span><div class="theme-options" role="group" aria-label="Màu nền">
+            <button type="button" class="theme-swatch" data-theme="dark" aria-label="Nền tối" title="Nền tối" aria-pressed="true"></button>
+            <button type="button" class="theme-swatch" data-theme="light" aria-label="Nền sáng" title="Nền sáng" aria-pressed="false"></button>
+            <button type="button" class="theme-swatch" data-theme="warm" aria-label="Nền giấy" title="Nền giấy" aria-pressed="false"></button>
+        </div></div>
+        <button type="button" id="resetReader" class="reset-reader">Khôi phục mặc định</button>
     </div>
-
-    <!-- Nội dung: chữ và ảnh xen kẽ đúng vị trí -->
-    <div class="content" th:if="${contentHtml != null}" th:utext="${contentHtml}"></div>
-    <div class="content" th:if="${contentHtml == null}">
-        <th:block th:each="b : ${blocks}">
-            <img th:if="${b.image}" th:src="${b.value}" alt="Ảnh minh họa"/>
-            <p th:unless="${b.image}" th:text="${b.value}"></p>
-        </th:block>
+</dialog>
+<dialog id="readerToc" class="reader-dialog" aria-labelledby="tocHeading">
+    <header class="dialog-head"><h2 id="tocHeading">Mục lục</h2><button type="button" class="close-dialog" data-close-dialog aria-label="Đóng">×</button></header>
+    <div class="dialog-body">
+        <label><span hidden>Tìm chương</span><input id="tocSearch" class="toc-search" type="search" placeholder="Tìm chương hoặc tập…" aria-label="Tìm chương hoặc tập"></label>
+        <ul class="toc-list">
+            <li th:each="link : ${readingNavigation.chapters}">
+                <a th:href="@{${link.path}}" th:attr="data-chapter-id=${link.chapterId},aria-current=${link.chapterId == chapter.chapterId ? 'page' : null}">
+                    <small th:text="${link.volumeTitle}"></small><span th:text="${link.title}"></span>
+                </a>
+            </li>
+        </ul>
+        <p id="tocEmpty" class="reader-notice" hidden>Không tìm thấy chương.</p>
     </div>
-
-    <div class="pager">
-        <a th:href="@{'/truyen/' + ${chapter.volume.product.productId} + '/chuong/' + ${chapter.chapterId} + '/prev'}" title="Chương trước">
-            <svg viewBox="0 0 24 24"><path d="M11 6v12l-8.5-6zM21 6v12l-8.5-6z"/></svg></a>
-        <a th:href="@{${chapter.volume.product.path}}" title="Về trang truyện">
-            <svg viewBox="0 0 24 24"><path d="M12 3 2 12h3v8h5v-6h4v6h5v-8h3z"/></svg></a>
-        <a th:href="@{'/truyen/' + ${chapter.volume.product.productId} + '/chuong/' + ${chapter.chapterId} + '/next'}" title="Chương sau">
-            <svg viewBox="0 0 24 24"><path d="M13 6v12l8.5-6zM3 6v12l8.5-6z"/></svg></a>
-    </div>
-</div>
+</dialog>
 </body>
 </html>

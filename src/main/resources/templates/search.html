@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" type="image/png" th:href="${siteLogoSmall}">
+    <title>Tìm kiếm truyện - Ranobe Kingdom</title>
+    <link rel="stylesheet" th:href="@{/css/catalog.css}">
+</head>
+<body>
+<nav th:replace="~{index :: navigation}"></nav>
+<main class="container">
+    <div class="search-top">
+        <h1 class="search-page-title">Tìm kiếm nâng cao</h1>
+        <a href="/">← Trang chủ</a>
+    </div>
+    <form class="advanced-search-form" method="get" action="/tim-kiem" role="search">
+        <label for="searchTitle">Tên truyện
+            <input id="searchTitle" type="search" name="q" th:value="${q}" maxlength="150" placeholder="Tên truyện">
+        </label>
+        <label for="searchAuthor">Tác giả
+            <input id="searchAuthor" type="text" name="author" th:value="${author}" maxlength="150" placeholder="Tên tác giả">
+        </label>
+        <label for="searchArtist">Họa sĩ
+            <input id="searchArtist" type="text" name="artist" th:value="${artist}" maxlength="150" placeholder="Tên họa sĩ">
+        </label>
+        <label for="searchUploader">Người đăng
+            <input id="searchUploader" type="text" name="uploader" th:value="${uploader}" maxlength="150" placeholder="Tên hiển thị của người đăng">
+        </label>
+        <label for="searchCategory">Thể loại
+            <select id="searchCategory" name="categoryId" aria-label="Thể loại">
+                <option value="">Tất cả thể loại</option>
+                <option th:each="category : ${categories}" th:value="${category.categoryId}"
+                        th:selected="${categoryId != null and categoryId == category.categoryId}"
+                        th:text="${category.categoryName}"></option>
+            </select>
+        </label>
+        <label for="searchSort">Sắp xếp
+            <select id="searchSort" name="sort" aria-label="Sắp xếp">
+                <option value="updated" th:selected="${sort == 'updated'}">Cập nhật mới nhất</option>
+                <option value="oldest" th:selected="${sort == 'oldest'}">Cập nhật cũ nhất</option>
+                <option value="title" th:selected="${sort == 'title'}">Tên truyện A–Z</option>
+            </select>
+        </label>
+        <div class="advanced-actions">
+            <button type="submit" class="advanced-submit" aria-label="Tìm truyện"><span class="search-symbol" aria-hidden="true">⌕</span>Tìm truyện</button>
+            <a href="/tim-kiem">Xóa bộ lọc</a>
+        </div>
+    </form>
+    <section aria-labelledby="searchResultsHeading">
+        <div class="search-results-head">
+            <h2 id="searchResultsHeading">Kết quả</h2>
+            <p class="catalog-count" th:text="${results.totalElements} + ' truyện'">0 truyện</p>
+        </div>
+        <div th:replace="~{index :: resultsGrid}"></div>
+        <p class="empty-search" th:if="${#lists.isEmpty(products)}">Không có truyện phù hợp.</p>
+        <nav th:replace="~{index :: pagination}"></nav>
+    </section>
+</main>
+</body>
+</html>

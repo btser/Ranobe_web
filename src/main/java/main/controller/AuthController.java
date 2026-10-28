@@ -1,96 +1,75 @@
 package main.controller;
 
-import main.entity.Account;
-import main.entity.AccountRole;
-import main.entity.User;
-import main.repository.AccountRepository;
-import main.repository.UserRepository;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import main.entity.Account;
+import main.service.AuthService;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.Optional;
-import java.util.Date;
 
 @Controller
 public class AuthController {
+    private final AuthService auth;
 
-    private final AccountRepository accountRepository;
-    private final UserRepository userRepository;
-
-    public AuthController(AccountRepository accountRepository, UserRepository userRepository) {
-        this.accountRepository = accountRepository;
-        this.userRepository = userRepository;
+    public AuthController(AuthService auth) {
+        this.auth = auth;
     }
 
-    // 1. Hiển thị trang Login
     @GetMapping("/login")
     public String showLoginForm() {
         return "login";
     }
 
-    // 2. Xử lý submit Login
     @PostMapping("/login")
     public String handleLogin(@RequestParam("username") String username,
                               @RequestParam("password") String password,
-                              HttpSession session,
-                              Model model) {
-        
-        Optional<Account> accountOpt = accountRepository.findByUsername(username);
-
-        // Kiểm tra username và password đơn giản (sau này nâng cấp Spring Security sau)
-        if (accountOpt.isPresent()
-                && !accountOpt.get().isDeleted()
-                && accountOpt.get().getPassword().equals(password)
-                && accountOpt.get().getUser() != null
-                && !accountOpt.get().getUser().isDeleted()) {
-            // Lưu User đã đăng nhập vào Session
-            session.setAttribute("loggedInUser", accountOpt.get().getUser());
-            session.setAttribute("loggedInAccount", accountOpt.get());
-            return "redirect:/"; // Đăng nhập thành công về trang chủ
+                              HttpServletRequest request, Model model) {
+        Optional<Account> found = auth.login(username, password);
+        if (found.isEmpty()) {
+            model.addAttribute("error", "Ten dang nhap hoac mat khau khong dung.");
+            model.addAttribute("formUsername", username);
+            return "login";
         }
-
-        model.addAttribute("error", "Username or password is incorrect!");
-        return "login";
+        // Doi ma phien sau khi dang nhap thanh cong.
+        HttpSession session = request.getSession(true);
+        request.changeSessionId();
+        Account account = found.get();
+        session.setAttribute("loggedInUser", account.getUser());
+        session.setAttribute("loggedInAccount", account);
+        return "redirect:/";
     }
 
-    // 3. Log out
     @GetMapping("/logout")
     public String logout(HttpSession session) {
-        session.invalidate(); // Xóa sạch session
+        session.invalidate();
         return "redirect:/login";
     }
 
-    // 4. Register
     @GetMapping("/register")
     public String showRegisterForm() {
         return "register";
     }
 
     @PostMapping("/register")
-    public String handleRegister (@RequestParam("username") String username, @RequestParam("email") String email, @RequestParam("password") String password, @RequestParam("userName") String displayName, Model model) {
-        if (accountRepository.findByUsername(username).isPresent()) {
-            model.addAttribute ("error", "Username is already exists");
-            return "register";
+    public String handleRegister(@RequestParam("username") String username,
+                                 @RequestParam("email") String email,
+                                 @RequestParam("password") String password,
+                                 @RequestParam("userName") String displayName, Model model) {
+        try {
+            auth.register(username, email, password, displayName);
+            return "redirect:/login?registered=1";
+        } catch (IllegalArgumentException e) {
+            model.addAttribute("error", e.getMessage());
+        } catch (DataIntegrityViolationException e) {
+            model.addAttribute("error",
+                    "Khong the tao tai khoan. Hay kiem tra ten dang nhap va dia chi thu dien tu.");
         }
-
-    // create user profile
-    User newUser = new User();
-    newUser.setUserName(displayName);
-    newUser.setBirth(new java.util.Date());
-    newUser = userRepository.save(newUser);
-
-    // create account link to user
-
-    Account newAccount = new Account();
-    newAccount.setUsername(username);
-    newAccount.setEmail(email);
-    newAccount.setPassword(password);
-    newAccount.setRole(AccountRole.USER);
-    newAccount.setUser(newUser);
-    accountRepository.save(newAccount);
-
-    return "redirect:/login" ;
+        model.addAttribute("formUsername", username);
+        model.addAttribute("formEmail", email);
+        model.addAttribute("formDisplayName", displayName);
+        return "register";
     }
 }

@@ -43,6 +43,7 @@ public class ProductController {
     private final ChapterImageRepository chapterImageRepository;
     private final LocalImageStorageService localImageStorageService;
     private final R2StorageService r2StorageService;
+    private final main.service.AccessPolicy access;
 
     public ProductController(ProductRepository productRepository,
                              CategoryRepository categoryRepository,
@@ -51,7 +52,7 @@ public class ProductController {
                              ChapterRepository chapterRepository,
                              ChapterImageRepository chapterImageRepository,
                              LocalImageStorageService localImageStorageService,
-                             R2StorageService r2StorageService) {
+                             R2StorageService r2StorageService, main.service.AccessPolicy access) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
         this.accountRepository = accountRepository;
@@ -60,6 +61,7 @@ public class ProductController {
         this.chapterImageRepository = chapterImageRepository;
         this.localImageStorageService = localImageStorageService;
         this.r2StorageService = r2StorageService;
+        this.access = access;
     }
 
     /** Về trang chỉnh sửa truyện (link đẹp, cần tên truyện nên tra theo id). */
@@ -142,7 +144,7 @@ public class ProductController {
         }
 
         User currentUser = (User) session.getAttribute("loggedInUser");
-        if ((product.isDeleted() || product.getStatus() == Status.PRIVATE) && !canManageProduct(currentUser, product)) {
+        if (!access.canView(currentUser, product)) {
             return "redirect:/";
         }
 
@@ -150,11 +152,18 @@ public class ProductController {
 
         model.addAttribute("product", product);
         model.addAttribute("volumes", volumes);
+        boolean uploaderBanned = product.getUploader() != null
+                && (product.getUploader().isDeleted()
+                || accountRepository.findByUserUserId(product.getUploader().getUserId())
+                        .map(Account::isDeleted).orElse(false));
+        model.addAttribute("uploaderBanned", uploaderBanned);
         model.addAttribute("user", currentUser);
         model.addAttribute("isOwner", isOwner(currentUser, product));
         model.addAttribute("isStaff", canModerate(currentUser));
         model.addAttribute("canEdit", canEditProduct(currentUser, product));
         model.addAttribute("canManageProduct", canManageProduct(currentUser, product));
+        var reading = main.service.ReadingNavigation.build(product.getPath(), volumes, null);
+        model.addAttribute("firstChapterPath", reading.chapters().isEmpty() ? null : reading.chapters().get(0).path());
 
         return "product-detail";
     }
@@ -423,13 +432,16 @@ public class ProductController {
             }
 
             model.addAttribute("volume", volume);
+            model.addAttribute("editorDraftKey", "user:" + currentUser.getUserId() + ":volume:" + volumeId + ":new");
             return "chapter-add";
         }
 
     @PostMapping("/{pid}/{pslug}/tap/{volumeId}/{vslug}/add-chapter")
     public String saveChapter(@PathVariable("volumeId") int volumeId, @RequestParam("title") String title,
         @RequestParam("context") String context,
-        @RequestParam(value = "completed", defaultValue = "true") boolean completed, HttpSession session) {
+        @RequestParam(value = "completed", defaultValue = "true") boolean completed,
+        @RequestParam(value = "draftRevision", defaultValue = "") String draftRevision,
+        HttpSession session, org.springframework.web.servlet.mvc.support.RedirectAttributes redirects) {
 
             User currentUser = (User) session.getAttribute("loggedInUser");
             Volume volume = volumeRepository.findByIdWithProductUploader(volumeId).orElse(null);
@@ -447,6 +459,9 @@ public class ProductController {
 
                 chapterRepository.save(chapter);
                 touchProduct(volume.getProduct().getProductId());
+
+                redirects.addFlashAttribute("savedDraftKey", "user:" + currentUser.getUserId() + ":volume:" + volumeId + ":new");
+                redirects.addFlashAttribute("savedDraftRevision", draftRevision);
 
                 return editRedirect(volume.getProduct().getProductId());
             }
@@ -493,6 +508,7 @@ public class ProductController {
             }
             model.addAttribute("chapter", chapter);
             model.addAttribute("editorHtml", main.service.ChapterContent.toEditorHtml(chapter.getContext(), extra));
+            model.addAttribute("editorDraftKey", "user:" + currentUser.getUserId() + ":chapter:" + chapterId);
             return "chapter-edit";
     }
 
@@ -500,7 +516,9 @@ public class ProductController {
     public String editChapterContent(@PathVariable("chapterId") int chapterId,
         @RequestParam("title") String title,
         @RequestParam("context") String context,
-        @RequestParam(value = "completed", defaultValue = "true") boolean completed, HttpSession session) {
+        @RequestParam(value = "completed", defaultValue = "true") boolean completed,
+        @RequestParam(value = "draftRevision", defaultValue = "") String draftRevision,
+        HttpSession session, org.springframework.web.servlet.mvc.support.RedirectAttributes redirects) {
 
             User currentUser = (User) session.getAttribute("loggedInUser");
             Chapter chapter = chapterRepository.findByIdWithVolumeProductUploader(chapterId).orElse(null);
@@ -519,6 +537,9 @@ public class ProductController {
             chapter.getImages().clear();
             chapterRepository.save(chapter);
             touchProduct(chapter.getVolume().getProduct().getProductId());
+
+            redirects.addFlashAttribute("savedDraftKey", "user:" + currentUser.getUserId() + ":chapter:" + chapterId);
+            redirects.addFlashAttribute("savedDraftRevision", draftRevision);
 
             return editRedirect(chapter.getVolume().getProduct().getProductId());
     }
@@ -707,7 +728,8 @@ public class ProductController {
         }
         User currentUser = (User) session.getAttribute("loggedInUser");
         Product product = chapter.getVolume().getProduct();
-        if ((product.isDeleted() || product.getStatus() == Status.PRIVATE) && !canManageProduct(currentUser, product)) {
+        if (!access.canView(currentUser, product)
+                || (chapter.getVolume().isDeleted() && !canModerate(currentUser))) {
             return "redirect:/";
         }
 
@@ -719,6 +741,8 @@ public class ProductController {
         model.addAttribute("blocks", main.service.ChapterContent.parse(chapter.getContext()));
         model.addAttribute("contentHtml", main.service.ChapterContent.htmlForReader(chapter.getContext()));
         model.addAttribute("wordCount", main.service.ChapterContent.wordCount(chapter.getContext()));
+        model.addAttribute("readingNavigation", main.service.ReadingNavigation.build(product.getPath(),
+                volumeRepository.findByProductIdWithChapters(product.getProductId()), chapterId));
         return "chapter-detail";
     }
 
@@ -751,16 +775,15 @@ public class ProductController {
     // ============== HELPERS ==============
 
     private boolean canManageProduct(User currentUser, Product product) {       // Only mod or admin can manage product
-        return canModerate(currentUser);
+        return access.canManage(currentUser, product);
     }
 
     private boolean canEditProduct(User currentUser, Product product) {         // Only owner can edit product
-        return isOwner(currentUser, product);
+        return access.canEdit(currentUser, product);
     }
 
     private boolean isOwner(User currentUser, Product product) {
-        return currentUser != null && product != null && product.getUploader() != null
-            && currentUser.getUserId() == product.getUploader().getUserId();
+        return access.isOwner(currentUser, product);
     }
 
     private boolean canManageVolume(User currentUser, Volume volume) {
@@ -768,8 +791,7 @@ public class ProductController {
     }
 
     private boolean canModerate(User currentUser) {
-        Account account = getAccount(currentUser);
-        return account != null && (account.getRole() == AccountRole.ADMIN || account.getRole() == AccountRole.MOD);
+        return access.canModerate(currentUser);
     }
 
     private Account getAccount(User currentUser) {

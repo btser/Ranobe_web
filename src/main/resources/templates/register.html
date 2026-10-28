@@ -112,7 +112,7 @@
         
         <form th:action="@{/login}" method="post" autocomplete="on">
             <div class="field anim" style="--d:1">
-                <input type="text" name="username" required placeholder=" " autocomplete="username">
+                <input type="text" name="username" th:value="${formUsername}" required placeholder=" " autocomplete="username">
                 <label>Tên đăng nhập</label>
                 <svg viewBox="0 0 24 24"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0 2c-4 0-8 2-8 5v3h16v-3c0-3-4-5-8-5z"/></svg>
             </div>
@@ -140,22 +140,22 @@
         <div th:if="${error}" class="error-msg" th:text="${error}"></div>
         <form th:action="@{/register}" method="post" autocomplete="on">
             <div class="field anim" style="--d:1">
-                <input type="text" name="userName" required placeholder=" " autocomplete="nickname">
+                <input type="text" name="userName" th:value="${formDisplayName}" required placeholder=" " autocomplete="nickname">
                 <label>Tên hiển thị</label>
                 <svg viewBox="0 0 24 24"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0 2c-4 0-8 2-8 5v3h16v-3c0-3-4-5-8-5z"/></svg>
             </div>
             <div class="field anim" style="--d:2">
-                <input type="email" name="email" required placeholder=" " autocomplete="email">
+                <input type="email" name="email" th:value="${formEmail}" required placeholder=" " autocomplete="email">
                 <label>Email</label>
                 <svg viewBox="0 0 24 24"><path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z"/></svg>
             </div>
             <div class="field anim" style="--d:3">
-                <input type="text" name="username" required placeholder=" " autocomplete="username">
+                <input type="text" name="username" th:value="${formUsername}" required placeholder=" " autocomplete="username">
                 <label>Tên đăng nhập</label>
                 <svg viewBox="0 0 24 24"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0 2c-4 0-8 2-8 5v3h16v-3c0-3-4-5-8-5z"/></svg>
             </div>
             <div class="field anim" style="--d:4">
-                <input type="password" name="password" required placeholder=" " autocomplete="new-password">
+                <input type="password" name="password" required minlength="8" maxlength="256" placeholder=" " autocomplete="new-password">
                 <label>Mật khẩu</label>
                 <svg viewBox="0 0 24 24"><path d="M18 8h-1V6a5 5 0 0 0-10 0v2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2zM9 6a3 3 0 0 1 6 0v2H9V6z"/></svg>
             </div>

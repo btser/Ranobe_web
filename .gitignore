@@ -6,6 +6,7 @@
 /Database/
 /uploads/
 
+
 # hide database account
 
 src/main/resources/application.properties
@@ -23,3 +24,4 @@ src/main/resources/application.properties
 
 .DS_Store
 *.log
+/plan.md

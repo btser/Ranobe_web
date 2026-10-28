@@ -2,57 +2,15 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="icon" type="image/png" th:href="${siteLogoSmall}">
     <title>Trang Chủ</title>
-    <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background-color: #121212; color: #e0e0e0; }
-        
-        /* Navbar Header */
-        .navbar { display: flex; justify-content: space-between; align-items: center; background-color: #1e1e1e; padding: 15px 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.5); }
-        .logo { font-size: 22px; font-weight: bold; color: #4da6ff; text-decoration: none; }
-        .logo { display: inline-flex; align-items: center; gap: 10px; }
-        .logo img { width: 38px; height: 38px; border-radius: 10px; display: block; }
-        .nav-links { display: flex; gap: 15px; align-items: center; }
-        
-        .btn { padding: 8px 16px; border-radius: 4px; text-decoration: none; font-weight: bold; font-size: 14px; transition: 0.2s; }
-        .btn-login { background-color: transparent; border: 1px solid #4da6ff; color: #4da6ff; }
-        .btn-login:hover { background-color: #4da6ff; color: white; }
-        .btn-register { background-color: #28a745; color: white; }
-        .btn-register:hover { background-color: #218838; }
-        .btn-add { background-color: #007bff; color: white; }
-        .btn-add:hover { background-color: #0056b3; }
-        .btn-logout { background-color: #dc3545; color: white; }
-        .btn-logout:hover { background-color: #c82333; }
-        .user-name { color: #ffca28; font-weight: bold; }
-
-        /* Content Container */
-        .container { padding: 30px; max-width: 1400px; margin: 0 auto; }
-
-        .section-head { display: flex; gap: 14px; align-items: center; margin-bottom: 22px; }
-        .section-head .pill { background: #2a2a2a; color: #fff; font-weight: bold; font-size: 18px; padding: 8px 14px; border-radius: 4px; }
-        .section-head .label { color: #e0e0e0; font-weight: bold; font-size: 18px; text-transform: uppercase; }
-
-        /* Đổi tỉ lệ ảnh bìa ở đây: 16 / 9 (ngang) hoặc 2 / 3 (dọc như ảnh mẫu) */
-        :root { --cover-ratio: 2/3; }
-
-        .grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 26px 20px; }
-        .novel-card { display: block; text-decoration: none; color: inherit; }
-        .novel-card .cover { position: relative; aspect-ratio: var(--cover-ratio); border-radius: 4px; overflow: hidden; background: #2a2a2a; }
-        .novel-card .cover img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .25s; }
-        .novel-card:hover .cover img { transform: scale(1.04); }
-        .cover-info { position: absolute; left: 0; right: 0; bottom: 0; padding: 22px 8px 7px; background: linear-gradient(to top, rgba(0,0,0,.85), rgba(0,0,0,0)); }
-        .cover-info .chap { color: #fff; font-weight: bold; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .cover-info .vol { color: #2ee6a6; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .novel-card .name { margin-top: 10px; text-align: center; font-weight: bold; font-size: 16px; color: #f0f0f0; line-height: 1.35;
-            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-        .novel-card:hover .name { color: #4da6ff; }
-        .badge-hidden { position: absolute; top: 6px; left: 6px; background: #dc3545; color: #fff; font-size: 11px; padding: 2px 6px; border-radius: 3px; }
-    </style>
+    <link rel="stylesheet" th:href="@{/css/catalog.css}">
 </head>
 <body>
 
     <!-- NAVBAR HEADER -->
-    <nav class="navbar">
+    <nav class="navbar" th:fragment="navigation">
         <a href="/" class="logo"><img th:src="${siteLogoSmall}" alt="LN"> Ranobe Kingdom</a>
         
         <div class="nav-links">
@@ -76,11 +34,23 @@
     <!-- CONTENT MAIN -->
     <div class="container">
         <div class="section-head">
-            <span class="pill">Truyện dịch</span>
-            <span class="label">Mới nhất</span>
+            <div class="section-titles">
+                <span class="pill">Truyện dịch</span>
+                <span class="label">Mới cập nhật</span>
+            </div>
+            <div class="quick-search-wrap">
+                <form class="quick-search" method="get" action="/" role="search">
+                    <input type="search" name="q" th:value="${q}" maxlength="150"
+                           placeholder="Tìm theo tên truyện…" aria-label="Tìm theo tên truyện">
+                    <button type="submit" title="Tìm truyện" aria-label="Tìm truyện">⌕</button>
+                </form>
+                <a class="advanced-link" th:href="@{/tim-kiem(q=${q})}">Tìm kiếm nâng cao →</a>
+            </div>
         </div>
 
-        <div class="grid-container">
+        <p class="catalog-count" th:text="${results.totalElements} + ' truyện'">0 truyện</p>
+
+        <div class="grid-container" th:fragment="resultsGrid">
             <a th:each="product : ${products}"
                th:with="lc=${latestChapters[product.productId]}"
                th:href="@{${product.path}}" class="novel-card">
@@ -107,8 +77,13 @@
         </div>
 
         <div th:if="${#lists.isEmpty(products)}">
-            <p>Chưa có bộ truyện nào</p>
+            <p>Không có truyện phù hợp.</p>
         </div>
+        <nav class="catalog-pages" th:fragment="pagination" aria-label="Phân trang" th:if="${results.totalPages > 1}">
+            <a th:if="${results.hasPrevious()}" th:href="${advancedSearch} ? @{/tim-kiem(q=${q},author=${author},artist=${artist},uploader=${uploader},categoryId=${categoryId},sort=${sort},page=${results.number - 1})} : @{/(q=${q},page=${results.number - 1})}" aria-label="Trang trước">←</a>
+            <span th:text="'Trang ' + ${results.number + 1} + ' / ' + ${results.totalPages}"></span>
+            <a th:if="${results.hasNext()}" th:href="${advancedSearch} ? @{/tim-kiem(q=${q},author=${author},artist=${artist},uploader=${uploader},categoryId=${categoryId},sort=${sort},page=${results.number + 1})} : @{/(q=${q},page=${results.number + 1})}" aria-label="Trang sau">→</a>
+        </nav>
     </div>
 
 </body>

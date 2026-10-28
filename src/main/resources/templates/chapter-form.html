@@ -41,8 +41,18 @@
 </style>
 
 <div class="ce-wrap">
-  <form class="ce-card" method="post" th:action="@{${action}}" id="ceForm">
+  <form class="ce-card" method="post" th:action="@{${action}}" id="ceForm" th:data-draft-key="${editorDraftKey}">
     <h1 th:text="${heading}">Thêm chương mới</h1>
+    <div id="draftRecovery" class="draft-banner" hidden>
+        <p id="draftRecoveryText"></p>
+        <div class="draft-buttons"><button type="button" id="restoreDraft">Khôi phục</button><button type="button" id="discardDraft">Bỏ bản nháp</button></div>
+    </div>
+    <div id="draftConflict" class="draft-banner" hidden>
+        <p>Bản nháp đã thay đổi ở cửa sổ khác.</p>
+        <div class="draft-buttons"><button type="button" id="loadOtherDraft">Nạp bản nháp đó</button><button type="button" id="keepThisDraft">Giữ bản đang soạn</button></div>
+    </div>
+    <p id="draftStatus" class="draft-status" role="status">Chưa có thay đổi</p>
+    <input type="hidden" name="draftRevision" id="draftRevision">
 
     <div class="ce-field">
         <label for="ceTitle">Tên chương <em>*</em></label>
@@ -126,6 +136,7 @@
         document.getElementById('ceChars').textContent = t.length.toLocaleString('vi-VN') + ' ký tự';
     }
     body.addEventListener('input', counts);
+    body.addEventListener('draft:restored', () => { saved = null; counts(); });
     counts();
 
     // Thanh công cụ
@@ -149,10 +160,12 @@
 
     // Upload + chèn ảnh theo thứ tự
     async function addFiles(files) {
+        if (document.getElementById('ceForm').dataset.uploading === 'true') return;
         const list = Array.from(files).filter(f => f.type.startsWith('image/'));
         if (!list.length) { msg.textContent = 'Chỉ nhận file ảnh.'; return; }
         const btn = document.getElementById('ceSubmit');
         btn.disabled = true;
+        document.getElementById('ceForm').dataset.uploading = 'true';
         let ok = 0;
         for (let i = 0; i < list.length; i++) {
             msg.textContent = 'Đang tải ảnh ' + (i + 1) + '/' + list.length + '...';
@@ -165,6 +178,7 @@
         }
         if (ok === list.length) msg.textContent = 'Đã chèn ' + ok + ' ảnh.';
         btn.disabled = false;
+        document.getElementById('ceForm').dataset.uploading = 'false';
         counts();
     }
     function insertImage(url) {
@@ -210,6 +224,9 @@
 
     // Gửi form
     document.getElementById('ceForm').addEventListener('submit', ev => {
+        if (document.getElementById('ceForm').dataset.uploading === 'true') {
+            ev.preventDefault(); msg.textContent = 'Ảnh đang được tải lên. Hãy chờ tải xong.'; return;
+        }
         const html = body.innerHTML.trim();
         if (!(body.innerText || '').trim() && !body.querySelector('img')) {
             ev.preventDefault(); msg.textContent = 'Nội dung chương đang trống.'; body.focus(); return;
@@ -218,6 +235,8 @@
     });
 })();
 </script>
+<link rel="stylesheet" th:href="@{/css/editor-drafts.css}">
+<script th:src="@{/js/editor-drafts.js}"></script>
 </th:block>
 </body>
 </html>

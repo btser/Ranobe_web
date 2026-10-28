@@ -47,7 +47,8 @@ public class UserController {
         User viewer = (User) session.getAttribute("loggedInUser");
         User profileUser = userRepository.findById(id).orElse(null);
 
-        boolean isOwner = viewer != null && viewer.getUserId() == profileUser.getUserId();
+        boolean isOwner = viewer != null && profileUser != null
+                && viewer.getUserId() == profileUser.getUserId();
         boolean isStaff = isStaff(viewer);
 
         if (profileUser == null || (profileUser.isDeleted() && !isStaff)) {
