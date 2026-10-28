@@ -28,6 +28,4 @@ A web application publishing and read novel, light novel, manga(maybe)
 - Cloudflare: image storage
 - Apache PDFBox: read and analyze PDF documents
 
-## Development Status
-The project is under active development. Features such as: 
 
