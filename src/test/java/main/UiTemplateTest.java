@@ -87,16 +87,27 @@ class UiTemplateTest {
         values.put("latestChapters", Map.of(101, chapters.get(27)));
         values.put("categories", List.of(category));
         values.put("q", "");
-        values.put("categoryId", null);
+        values.put("categoryId", List.of(1));
         values.put("sort", "updated");
         values.put("author", "");
         values.put("artist", "");
         values.put("uploader", "");
         values.put("advancedSearch", false);
         values.put("results", new PageImpl<>(List.of(product), PageRequest.of(0, 24), 30));
+        Account administrator = new Account();
+        administrator.setAccountId(1);
+        administrator.setRole(AccountRole.ADMIN);
+        administrator.setUsername("admin");
+        values.put("accounts", List.of(administrator));
+        values.put("currentAccount", administrator);
+        values.put("isAdmin", true);
+        values.put("accountResults", new PageImpl<>(List.of(administrator), PageRequest.of(0, 24), 30));
+        values.put("productResults", new PageImpl<>(List.of(product), PageRequest.of(0, 24), 30));
+        values.put("accountQ", ""); values.put("productQ", "");
+        values.put("accountState", "all"); values.put("productState", "all");
         Path output = Path.of("target", "ui-preview");
         Files.createDirectories(output);
-        for (String template : List.of("chapter-detail", "product-detail", "chapter-edit", "index", "search")) {
+        for (String template : List.of("chapter-detail", "product-detail", "chapter-edit", "index", "search", "admin")) {
             values.put("advancedSearch", "search".equals(template));
             MockHttpServletRequest request = new MockHttpServletRequest(servlet);
             request.setRequestURI("/");

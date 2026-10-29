@@ -2,6 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="icon" type="image/png" th:href="${siteLogoSmall}">
     <title>Quản trị Ranobe</title>
     <style>
@@ -26,6 +27,13 @@
         .danger { background: #dc3545; }
         .neutral { background: #444; }
         .back-link { color: #888; text-decoration: none; }
+        .filters { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:16px; align-items:end; }
+        .filters label { display:grid; gap:5px; }
+        .filters input, .filters select { background:#252525; color:#eee; padding:9px; border:1px solid #555; border-radius:4px; max-width:100%; }
+        .table-wrap { overflow-x:auto; }
+        .pages { display:flex; gap:16px; align-items:center; justify-content:center; margin:16px 0 0; }
+        .pages a { color:#4da6ff; }
+        .filters button { background:#287c48; }
     </style>
 </head>
 <body>
@@ -38,6 +46,20 @@
 
     <section class="panel">
         <h2>Tác phẩm</h2>
+        <form class="filters" method="get" action="/admin">
+            <input type="hidden" name="accountQ" th:value="${accountQ}">
+            <input type="hidden" name="accountState" th:value="${accountState}">
+            <input type="hidden" name="accountPage" th:value="${accountResults.number}">
+            <label>Tên truyện<input name="productQ" th:value="${productQ}" maxlength="150" placeholder="Tìm truyện"></label>
+            <label>Hiển thị<select name="productState">
+                <option value="all" th:selected="${productState == 'all'}">Tất cả</option>
+                <option value="hidden" th:selected="${productState == 'hidden'}">Đã ẩn</option>
+                <option value="active" th:selected="${productState == 'active'}">Đang hiện</option>
+            </select></label>
+            <button type="submit">Lọc truyện</button>
+        </form>
+        <p th:text="${productResults.totalElements} + ' truyện'"></p>
+        <div class="table-wrap">
         <table>
             <thead>
             <tr>
@@ -69,10 +91,30 @@
             </tr>
             </tbody>
         </table>
+        </div>
+        <nav class="pages" th:if="${productResults.totalPages > 1}" aria-label="Phân trang truyện quản trị">
+            <a th:if="${productResults.hasPrevious()}" th:href="@{/admin(productQ=${productQ},productState=${productState},productPage=${productResults.number - 1},accountQ=${accountQ},accountState=${accountState},accountPage=${accountResults.number})}">Trang trước</a>
+            <span th:text="${productResults.number + 1} + ' / ' + ${productResults.totalPages}"></span>
+            <a th:if="${productResults.hasNext()}" th:href="@{/admin(productQ=${productQ},productState=${productState},productPage=${productResults.number + 1},accountQ=${accountQ},accountState=${accountState},accountPage=${accountResults.number})}">Trang sau</a>
+        </nav>
     </section>
 
     <section class="panel">
         <h2>Tài khoản</h2>
+        <form class="filters" method="get" action="/admin">
+            <input type="hidden" name="productQ" th:value="${productQ}">
+            <input type="hidden" name="productState" th:value="${productState}">
+            <input type="hidden" name="productPage" th:value="${productResults.number}">
+            <label>Tìm tài khoản<input name="accountQ" th:value="${accountQ}" maxlength="150" placeholder="Tên đăng nhập, tên hiển thị, email"></label>
+            <label>Tình trạng<select name="accountState">
+                <option value="all" th:selected="${accountState == 'all'}">Tất cả</option>
+                <option value="hidden" th:selected="${accountState == 'hidden'}">Bị khóa</option>
+                <option value="active" th:selected="${accountState == 'active'}">Hoạt động</option>
+            </select></label>
+            <button type="submit">Lọc tài khoản</button>
+        </form>
+        <p th:text="${accountResults.totalElements} + ' tài khoản'"></p>
+        <div class="table-wrap">
         <table>
             <thead>
             <tr>
@@ -87,7 +129,7 @@
             <tbody>
             <tr th:each="account : ${accounts}">
                 <td th:text="${account.accountId}">1</td>
-                <td th:text="${account.username}">username</td>
+                <td><a th:if="${account.user != null}" th:href="@{/users/{id}(id=${account.user.userId})}" th:text="${account.username}" style="color:#4da6ff">username</a><span th:if="${account.user == null}" th:text="${account.username}"></span></td>
                 <td th:text="${account.email}">email</td>
                 <td><span class="tag" th:text="${account.role}">USER</span></td>
                 <td>
@@ -107,6 +149,12 @@
             </tr>
             </tbody>
         </table>
+        </div>
+        <nav class="pages" th:if="${accountResults.totalPages > 1}" aria-label="Phân trang tài khoản quản trị">
+            <a th:if="${accountResults.hasPrevious()}" th:href="@{/admin(accountQ=${accountQ},accountState=${accountState},accountPage=${accountResults.number - 1},productQ=${productQ},productState=${productState},productPage=${productResults.number})}">Trang trước</a>
+            <span th:text="${accountResults.number + 1} + ' / ' + ${accountResults.totalPages}"></span>
+            <a th:if="${accountResults.hasNext()}" th:href="@{/admin(accountQ=${accountQ},accountState=${accountState},accountPage=${accountResults.number + 1},productQ=${productQ},productState=${productState},productPage=${productResults.number})}">Trang sau</a>
+        </nav>
     </section>
 </div>
 </body>

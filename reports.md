@@ -121,8 +121,8 @@ Khóa truy cập R2 cần có quyền liệt kê, đọc thông tin và xóa tro
 
 ## Report 6 — Nhập PDF thất bại có thể thử lại
 
-**Date:** 2026-10-29  
-**Status:** Completed  
+**Date:** 2026-10-29
+**Status:** Completed
 **Branch:** sub
 
 ### 1. Task Overview — Tổng quan
@@ -151,3 +151,38 @@ Lượt chưa hoàn tất chỉ giữ trong bộ nhớ hai giờ; khởi động
 
 ### 9. Final Result — Kết quả cuối cùng
 Mục 6 đã đánh ✅ trong `plan.md` sau xác minh thành công. Kết quả đẩy mã và mã commit được báo riêng sau thao tác Git, không ghi trước vào báo cáo.
+
+---
+
+## Report 8 — Tìm kiếm, lọc và phân trang
+
+**Date:** 2026-10-29
+**Status:** Completed
+**Branch:** sub
+
+### 1. Task Overview — Tổng quan
+Hoàn thiện chọn nhiều thể loại và danh sách quản trị. Giữ trang chủ chỉ tìm tên truyện; giữ bộ lọc tác giả, họa sĩ, người đăng tại trang nâng cao.
+
+### 2. Implementation Summary — Nội dung triển khai
+Tìm kiếm nâng cao dùng ô chọn từng thể loại; kết quả phải chứa tất cả thể loại đã chọn. Quản trị có từ khóa tài khoản (tên đăng nhập, thư điện tử, tên hiển thị), tình trạng khóa; truyện có từ khóa và trạng thái ẩn. Hai danh sách phân trang độc lập, 24 bản ghi/trang, giữ bộ lọc khi chuyển trang.
+
+### 3. Methods and Algorithms — Phương pháp và thuật toán
+`CatalogSearch.categoryIds()` lọc số dương, bỏ trùng, giới hạn 20 thể loại. `matchingCategories()` kết hợp các điều kiện bằng phép VÀ; mỗi thể loại có truy vấn con kiểm tra bảng nối hoặc thể loại chính cũ. Không nối nhiều tập hợp vào truy vấn phân trang nên tránh nhân bản hàng. `AdministrationSearch` tạo điều kiện truy vấn theo dữ liệu đầu vào đã chuẩn hóa, thoát ký tự đại diện của phép tìm chuỗi. `PageRequest` đưa giới hạn/phân trang xuống cơ sở dữ liệu; thứ tự mã giảm dần ổn định ở quản trị. Chi phí truy vấn phụ thuộc chỉ mục và độ lớn bảng; tìm chuỗi chứa có thể quét bảng, chưa có phép đo hiệu năng.
+
+### 4. Design Decisions — Quyết định thiết kế
+Ô chọn dễ dùng trên điện thoại hơn danh sách cần giữ phím chọn nhiều. Giới hạn số điều kiện để tránh truy vấn quá lớn. Chỉ quản trị viên/điều phối viên được xem danh sách quản trị. Các thao tác khóa/ẩn giữ tại hồ sơ/trang truyện; không đưa trở lại danh sách.
+
+### 5. Architecture and Data Flow — Kiến trúc và luồng dữ liệu
+Biểu mẫu gửi tham số → bộ điều khiển chuẩn hóa → điều kiện truy vấn và trang → kho dữ liệu trả trang → mẫu hiển thị giữ trạng thái. Một liên kết cũ `categoryId=1` vẫn dùng được; nhiều giá trị gửi lặp cùng tên tham số.
+
+### 6. Files Changed — Các file thay đổi
+`HomeController.java`, `CatalogSearch.java`, `search.html`, `catalog.css`: nhiều thể loại. `AdminController.java`, `AdministrationSearch.java`, `AccountRepository.java`, `admin.html`: truy vấn/phân trang quản trị. `UiTemplateTest.java`, `AdminControllerTest.java`, `CatalogSearchTest.java`, `scripts/verify-reading-ui.cjs`, `scripts/verify-live-reading.cjs`: kiểm tra và cập nhật lựa chọn thể loại. `plan.md` và `reports.md`: ghi nhận hoàn tất. Không thay đổi `.gitignore`.
+
+### 7. Testing and Validation — Kiểm thử
+Đã chạy `mvn -o -Dmaven.compiler.proc=none -Dnet.bytebuddy.experimental=true test`: 41 kiểm thử đạt. Lần đầu kỳ vọng kiểm thử đếm một phép kiểm tra/thể loại nhưng thực tế có cả thể loại chính và bảng nối; đã sửa kỳ vọng thành hai và chạy lại thành công. Đã chạy `node scripts/verify-reading-ui.cjs`: đạt kiểm tra biểu mẫu, kích thước 320/390/1280 và các chức năng đọc/bản nháp. Mẫu `admin.html` được dựng trong kiểm thử giao diện. Chưa chạy script đọc dữ liệu thực sau thay đổi này.
+
+### 8. Limitations and Future Improvements — Hạn chế và cải tiến
+Kiểm thử điều kiện truy vấn dùng đối tượng giả lập, chưa đo trên lượng dữ liệu lớn. Phân trang vượt cuối danh sách hiện trả trang trống; người dùng có thể quay trang trước hoặc lọc lại.
+
+### 9. Final Result — Kết quả cuối cùng
+Mục 8 đã đánh ✅ sau kiểm thử. Các thay đổi chỉ thuộc tìm kiếm, quản trị và kiểm tra liên quan; kết quả commit/push báo riêng sau thao tác thực tế.

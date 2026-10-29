@@ -1,4 +1,9 @@
 body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background-color: #121212; color: #e0e0e0; }
+.category-options { grid-column:1 / -1; border:1px solid #484848; border-radius:4px; margin:0; padding:12px; min-width:0; }
+.category-options p { margin:4px 0 10px; color:#aaa; font-size:13px; }
+.category-options > div { display:flex; flex-wrap:wrap; gap:10px 18px; }
+.advanced-search-form .category-options label { display:inline-flex; align-items:center; gap:6px; }
+.advanced-search-form .category-options input { width:17px; height:17px; margin:0; padding:0; }
 
 /* Navbar Header */
 .navbar { position: sticky; top: 0; z-index: 1000; display: flex; justify-content: space-between; align-items: center; background-color: #1e1e1e; padding: 15px 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.5); }

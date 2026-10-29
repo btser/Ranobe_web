@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
 
 @Controller
 public class HomeController {
@@ -37,7 +38,7 @@ public class HomeController {
     public String homePage(Model model, HttpSession session,
                            @RequestParam(defaultValue = "") String q,
                            @RequestParam(defaultValue = "0") int page) {
-        return catalog(model, session, q, "", "", "", null, "updated", page, false);
+        return catalog(model, session, q, "", "", "", List.of(), "updated", page, false);
     }
 
     @GetMapping("/tim-kiem")
@@ -46,14 +47,14 @@ public class HomeController {
                                  @RequestParam(defaultValue = "") String author,
                                  @RequestParam(defaultValue = "") String artist,
                                  @RequestParam(defaultValue = "") String uploader,
-                                 @RequestParam(required = false) Integer categoryId,
+                                 @RequestParam(required = false) List<Integer> categoryId,
                                  @RequestParam(defaultValue = "updated") String sort,
                                  @RequestParam(defaultValue = "0") int page) {
         return catalog(model, session, q, author, artist, uploader, categoryId, sort, page, true);
     }
 
     private String catalog(Model model, HttpSession session, String q, String author, String artist,
-                           String uploader, Integer categoryId, String sort, int page, boolean advanced) {
+                           String uploader, List<Integer> categoryId, String sort, int page, boolean advanced) {
         User user = (User) session.getAttribute("loggedInUser");
         Account account = user == null ? null
                 : accountRepository.findByUserUserId(user.getUserId()).orElse(null);
@@ -63,8 +64,9 @@ public class HomeController {
         artist = clean(artist);
         uploader = clean(uploader);
         sort = CatalogSearch.sortKey(sort);
-        var results = productRepository.findAll(CatalogSearch.matching(q, author, artist, uploader,
-                categoryId, staff, sort), PageRequest.of(Math.max(0, page), 24));
+        categoryId = CatalogSearch.categoryIds(categoryId);
+        var results = productRepository.findAll(CatalogSearch.matchingCategories(q, author, artist, uploader,
+                categoryId, staff, sort), PageRequest.of(Math.min(100000, Math.max(0, page)), 24));
 
         Map<Integer, Chapter> latestChapters = new HashMap<>();
         for (Chapter chapter : chapterRepository.findLatestChapterOfEachProduct()) {

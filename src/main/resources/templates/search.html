@@ -27,14 +27,17 @@
         <label for="searchUploader">Người đăng
             <input id="searchUploader" type="text" name="uploader" th:value="${uploader}" maxlength="150" placeholder="Tên hiển thị của người đăng">
         </label>
-        <label for="searchCategory">Thể loại
-            <select id="searchCategory" name="categoryId" aria-label="Thể loại">
-                <option value="">Tất cả thể loại</option>
-                <option th:each="category : ${categories}" th:value="${category.categoryId}"
-                        th:selected="${categoryId != null and categoryId == category.categoryId}"
-                        th:text="${category.categoryName}"></option>
-            </select>
-        </label>
+        <fieldset class="category-options">
+            <legend>Thể loại</legend>
+            <p>Chọn nhiều thể loại: truyện phải có đủ các thể loại đã chọn.</p>
+            <div>
+                <label th:each="category : ${categories}">
+                    <input type="checkbox" name="categoryId" th:value="${category.categoryId}"
+                           th:checked="${categoryId != null and #lists.contains(categoryId, category.categoryId)}">
+                    <span th:text="${category.categoryName}">Thể loại</span>
+                </label>
+            </div>
+        </fieldset>
         <label for="searchSort">Sắp xếp
             <select id="searchSort" name="sort" aria-label="Sắp xếp">
                 <option value="updated" th:selected="${sort == 'updated'}">Cập nhật mới nhất</option>

@@ -19,12 +19,12 @@ const { chromium } = require('playwright');
         }
         const advanced = await page.goto(base + '/tim-kiem');
         assert.equal(advanced.status(), 200, 'Advanced search page');
-        const categories = await page.locator('[name="categoryId"] option').evaluateAll(nodes =>
+        const categories = await page.locator('input[name="categoryId"]').evaluateAll(nodes =>
             nodes.map(node => node.value).filter(Boolean));
         if (categories.length) {
             const filtered = await page.goto(base + '/tim-kiem?categoryId=' + encodeURIComponent(categories[0]) + '&sort=oldest');
             assert.equal(filtered.status(), 200, 'Category filter query');
-            assert.equal(await page.locator('[name="categoryId"]').inputValue(), categories[0]);
+            assert(await page.locator('input[name="categoryId"][value="' + categories[0] + '"]').isChecked());
         }
         const literalSearch = await page.goto(base + '/?q=%25_!&sort=updated');
         assert.equal(literalSearch.status(), 200, 'Literal wildcard query');

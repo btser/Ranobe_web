@@ -52,7 +52,7 @@ let browser;
     await page.getByLabel('Tác giả', { exact: true }).fill('Tác giả mẫu');
     await page.getByLabel('Họa sĩ', { exact: true }).fill('Họa sĩ mẫu');
     await page.getByLabel('Người đăng', { exact: true }).fill('Tên hiển thị mẫu');
-    await page.getByLabel('Thể loại', { exact: true }).selectOption('1');
+    await page.locator('input[name="categoryId"][value="1"]').check();
     await page.getByLabel('Sắp xếp', { exact: true }).selectOption('title');
     await page.getByRole('button', { name: 'Tìm truyện' }).click();
     assert(new URL(page.url()).searchParams.get('q') === 'mưa');

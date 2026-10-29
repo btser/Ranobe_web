@@ -23,6 +23,17 @@ public final class CatalogSearch {
 
     public static Specification<Product> matching(String title, String author, String artist,
                                                   String uploader, Integer categoryId, boolean staff, String sort) {
+        return matchingCategories(title, author, artist, uploader,
+                categoryId == null ? List.of() : List.of(categoryId), staff, sort);
+    }
+
+    public static List<Integer> categoryIds(List<Integer> ids) {
+        return ids == null ? List.of() : ids.stream().filter(java.util.Objects::nonNull)
+                .filter(id -> id > 0).distinct().limit(20).toList();
+    }
+
+    public static Specification<Product> matchingCategories(String title, String author, String artist,
+                                                  String uploader, List<Integer> categoryIds, boolean staff, String sort) {
         String order = sortKey(sort);
         return (root, query, cb) -> {
             List<Predicate> conditions = new ArrayList<>();
@@ -34,7 +45,7 @@ public final class CatalogSearch {
             if (uploader != null && !uploader.isBlank()) {
                 contains(conditions, cb, root.join("uploader").get("userName"), uploader);
             }
-            if (categoryId != null) {
+            for (Integer categoryId : categoryIds(categoryIds)) {
                 var categoryProducts = query.subquery(Integer.class);
                 var product = categoryProducts.from(Product.class);
                 categoryProducts.select(product.get("productId"))

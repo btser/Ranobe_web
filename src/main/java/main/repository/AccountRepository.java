@@ -7,7 +7,8 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface AccountRepository extends JpaRepository<Account, Integer> {
+public interface AccountRepository extends JpaRepository<Account, Integer>,
+        org.springframework.data.jpa.repository.JpaSpecificationExecutor<Account> {
     List<Account> findByIsDeletedFalse();
     Optional<Account> findByUsername(String username);
     Optional<Account> findByUserUserId(int userId);

@@ -23,7 +23,7 @@ Quyền xóa tập/chương hiện cũng đang theo chủ sở hữu; cần th�
 # ✅7.Lưu lịch sử đọc để nút “Đọc tiếp” đúng nghĩa.
 Nút hiện tại trỏ vào chương đầu của tập đầu. Nên lưu chương đọc gần nhất và vị trí cuộn trang; người chưa đọc thì hiện “Đọc từ đầu”. Đồng thời tìm chương đầu thực sự có nội dung nếu tập đầu đang trống.
 
-# 8.Thêm tìm kiếm, lọc và phân trang.
+# ✅8.Thêm tìm kiếm, lọc và phân trang.
 Tìm theo tên truyện/tác giả, lọc nhiều thể loại và sắp xếp theo cập nhật. Trang quản trị cũng cần tìm tài khoản, lọc truyện đã ẩn và tài khoản bị khóa.
 
 # 9.Quản lý thay đổi cấu trúc cơ sở dữ liệu theo phiên bản.

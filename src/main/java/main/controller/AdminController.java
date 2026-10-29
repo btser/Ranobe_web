@@ -14,6 +14,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import main.service.AdministrationSearch;
 
 import java.util.List;
 
@@ -32,17 +36,33 @@ public class AdminController {
     }
 
     @GetMapping
-    public String dashboard(Model model, HttpSession session) {
+    public String dashboard(Model model, HttpSession session,
+            @RequestParam(defaultValue = "") String accountQ, @RequestParam(defaultValue = "all") String accountState,
+            @RequestParam(defaultValue = "0") int accountPage,
+            @RequestParam(defaultValue = "") String productQ, @RequestParam(defaultValue = "all") String productState,
+            @RequestParam(defaultValue = "0") int productPage) {
         Account currentAccount = getCurrentAccount(session);
         if (!isStaff(currentAccount)) {
             return "redirect:/";
         }
 
-        List<Account> accounts = accountRepository.findAll();
-        List<Product> products = productRepository.findAllWithDetails();
+        accountQ = AdministrationSearch.keyword(accountQ);
+        productQ = AdministrationSearch.keyword(productQ);
+        accountState = AdministrationSearch.state(accountState);
+        productState = AdministrationSearch.state(productState);
+        var accounts = accountRepository.findAll(AdministrationSearch.accounts(accountQ, accountState),
+                PageRequest.of(Math.min(100000, Math.max(0, accountPage)), 24, Sort.by("accountId").descending()));
+        var products = productRepository.findAll(AdministrationSearch.products(productQ, productState),
+                PageRequest.of(Math.min(100000, Math.max(0, productPage)), 24, Sort.by("productId").descending()));
 
-        model.addAttribute("accounts", accounts);
-        model.addAttribute("products", products);
+        model.addAttribute("accounts", accounts.getContent());
+        model.addAttribute("products", products.getContent());
+        model.addAttribute("accountResults", accounts);
+        model.addAttribute("productResults", products);
+        model.addAttribute("accountQ", accountQ);
+        model.addAttribute("productQ", productQ);
+        model.addAttribute("accountState", accountState);
+        model.addAttribute("productState", productState);
         model.addAttribute("currentAccount", currentAccount);
         model.addAttribute("isAdmin", currentAccount.getRole() == AccountRole.ADMIN);
         return "admin";
