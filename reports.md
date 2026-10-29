@@ -188,3 +188,38 @@ Kiểm thử điều kiện truy vấn dùng đối tượng giả lập, chưa 
 
 ### 9. Final Result — Kết quả cuối cùng
 Mục 8 đã đánh ✅ sau kiểm thử. Các thay đổi chỉ thuộc tìm kiếm, quản trị và kiểm tra liên quan; kết quả commit/push báo riêng sau thao tác thực tế.
+
+---
+
+## Report 9 — Quản lý cấu trúc dữ liệu theo phiên bản
+
+**Date:** 2026-10-29
+**Status:** Completed
+**Branch:** sub
+
+### 1. Task Overview — Tổng quan
+Thay việc tự thêm cột không có lịch sử bằng các bản SQL có phiên bản; thêm cột, bổ sung giá trị cũ rồi mới đặt ràng buộc để tránh lỗi khi đọc số/giá trị đúng-sai bị trống.
+
+### 2. Implementation Summary — Nội dung triển khai
+Thêm Flyway và thành phần hỗ trợ PostgreSQL theo phiên bản Spring Boot 3.3.0 quản lý. `SchemaVersionConfig` tiếp nhận cơ sở dữ liệu có sẵn từ mốc 0 và buộc Hibernate chỉ kiểm tra cấu trúc, kể cả cấu hình cục bộ cũ còn đặt `ddl-auto=update`. Không sửa hoặc đưa file cấu hình có khóa bí mật vào Git.
+
+### 3. Methods and Algorithms — Phương pháp và thuật toán
+Flyway lưu lịch sử và mã kiểm tra nội dung tại `flyway_schema_history`. `V1__create_existing_schema.sql` tạo cấu trúc khi thiếu mà không ghi đè bảng đang có. `V2__backfill_legacy_fields.sql` bổ sung các cột từ các tính năng cũ, đổi kiểu liệt kê PostgreSQL cũ sang chuỗi Java sử dụng, cập nhật giá trị NULL an toàn (trạng thái truyện trống thành riêng tư), đặt mặc định và ràng buộc không trống. Chỉ mục duy nhất tên đăng nhập/thư điện tử không phân biệt hoa thường được tạo; dữ liệu trùng/thiếu gây dừng thay vì xóa tài khoản tự động. Mỗi bản SQL chạy theo giao dịch PostgreSQL; lỗi không được coi là đã áp dụng. Chi phí khởi tạo gồm quét bảng và tạo chỉ mục; những lần sau chỉ kiểm tra lịch sử, không chạy lại cập nhật.
+
+### 4. Design Decisions — Quyết định thiết kế
+Dùng công cụ quản lý phiên bản đã tích hợp với Spring Boot; không tự viết bộ chạy SQL. Mốc tiếp nhận là 0 để hai bản V1/V2 vẫn chạy trên cơ sở dữ liệu cũ. Hibernate không còn tự sửa để thay đổi cấu trúc bắt buộc đi qua file phiên bản. Các bản đã áp dụng không được sửa nội dung; thay đổi tiếp theo thêm `V3__...sql`, `V4__...sql`.
+
+### 5. Architecture and Data Flow — Kiến trúc và luồng dữ liệu
+Khởi động → Flyway kiểm tra lịch sử → áp dụng bản mới theo thứ tự → Hibernate xác minh lớp dữ liệu → ứng dụng chạy. Cơ sở dữ liệu cũ giữ nguyên truyện/chương, chỉ bổ sung cột/giá trị thiếu. Tham khảo cơ chế tích hợp tại [Spring Boot](https://docs.spring.io/spring-boot/how-to/data-initialization.html) và ý nghĩa mốc tiếp nhận tại [Flyway](https://documentation.red-gate.com/flyway/reference/commands/baseline).
+
+### 6. Files Changed — Các file thay đổi
+`pom.xml`: hai thành phần Flyway. `SchemaVersionConfig.java`: mốc tiếp nhận và chế độ xác minh Hibernate. Hai file trong `src/main/resources/db/migration/`: cấu trúc hiện tại và nâng cấp dữ liệu cũ. `SchemaMigrationTest.java`: kiểm thử PostgreSQL tách biệt. `plan.md` và `reports.md`: kết quả. Không sửa `.gitignore` hay `Database/ranobe_web.sql`.
+
+### 7. Testing and Validation — Kiểm thử
+Đã chạy biên dịch bằng `mvn -Dmaven.compiler.proc=none -Dnet.bytebuddy.experimental=true -DskipTests compile`, sau đó `RUN_DATABASE_TESTS=true` với `mvn -o -Dmaven.compiler.proc=none -Dnet.bytebuddy.experimental=true test`: **44 kiểm thử đạt, không bỏ qua**. Hai kiểm thử PostgreSQL tạo lược đồ tạm tên ngẫu nhiên `codex_schema_test_…`, xóa đúng lược đồ đó khi xong; không dùng các bảng `public` để thử. Đã kiểm tra cơ sở dữ liệu mới chạy đủ V1/V2, chạy lại không áp dụng trùng, Hibernate xác minh tất cả lớp dữ liệu hiện có, cơ sở dữ liệu cũ thiếu cột/có NULL được nâng cấp, chữ tiếng Việt giữ nguyên và ràng buộc chặn NULL mới. Không khởi động toàn ứng dụng/R2 để kiểm thử này.
+
+### 8. Limitations and Future Improvements — Hạn chế và cải tiến
+Thư viện tải thành công và SQL chạy trên PostgreSQL 16.14 cục bộ, chưa chạy trên máy chủ triển khai. Trước lần chạy ứng dụng đầu tiên với dữ liệu thật cần có bản sao lưu. Những lỗi dữ liệu khác như trùng tài khoản không được tự xóa hoặc đoán giá trị. Tài khoản kết nối cần quyền thay đổi cấu trúc khi có bản nâng cấp mới. Bộ kiểm thử PostgreSQL chỉ chạy khi đặt `RUN_DATABASE_TESTS=true`, dùng thông tin kết nối từ file cục bộ không đưa vào Git.
+
+### 9. Final Result — Kết quả cuối cùng
+Mục 9 đánh ✅ sau 44 kiểm thử thành công. Các lần thêm trường sau phải bổ sung file SQL phiên bản mới; cấu hình riêng tư và `.gitignore` giữ nguyên.

@@ -26,7 +26,7 @@ Nút hiện tại trỏ vào chương đầu của tập đầu. Nên lưu chư�
 # ✅8.Thêm tìm kiếm, lọc và phân trang.
 Tìm theo tên truyện/tác giả, lọc nhiều thể loại và sắp xếp theo cập nhật. Trang quản trị cũng cần tìm tài khoản, lọc truyện đã ẩn và tài khoản bị khóa.
 
-# 9.Quản lý thay đổi cấu trúc cơ sở dữ liệu theo phiên bản.
+# ✅9.Quản lý thay đổi cấu trúc cơ sở dữ liệu theo phiên bản.
 Mỗi lần thêm cột cần có bước bổ sung giá trị cho dữ liệu cũ và ràng buộc không để trống khi cần. Việc này tránh lặp lại lỗi truyện cũ bị sập sau khi thêm trường.
 
 # 10. Ranking
