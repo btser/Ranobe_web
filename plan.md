@@ -32,5 +32,5 @@ Mỗi lần thêm cột cần có bước bổ sung giá trị cho dữ liệu c
 # ✅10. Ranking
 Xếp hạng truyện công khai theo điểm = 100 × bình chọn + 10 × bình luận + lượt xem. Công thức tạm thời do người dùng chốt ngày 29/10/2026, có thể điều chỉnh sau.
 
-# 11.Recommend
+# ✅11.Recommend
 Dựa trên điểm (đề xuất ở phần 10. Ranking) được tính trong vòng 24h gần nhất. Hiện recommend khoảng 5-6 tác phẩm trên trang chủ.

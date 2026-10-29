@@ -260,3 +260,38 @@ Chưa nhập lại số liệu lịch sử vào bảng mới, chưa có sửa/x�
 
 ### 9. Final Result — Kết quả cuối cùng
 Mục 10 đã đánh ✅, công thức ghi rõ theo quyết định người dùng. Các kiểm tra trên dữ liệu tạm thành công; không tạo bình chọn/bình luận vào dữ liệu truyện hiện có để thử nghiệm.
+
+---
+
+## Report 11 — Đề xuất theo tương tác 24 giờ
+
+**Date:** 2026-10-29
+**Status:** Completed
+**Branch:** sub
+
+### 1. Task Overview — Tổng quan
+Hiện tối đa 6 truyện trên trang chủ dựa vào điểm tương tác trong 24 giờ gần nhất, dùng đúng trọng số tạm của mục 10: bình chọn 100, bình luận 10, lượt xem 1.
+
+### 2. Implementation Summary — Nội dung triển khai
+`HomeController.catalog()` chỉ lấy đề xuất khi mở trang chủ không có từ khóa. `EngagementService.ranking()` nhận mốc hiện tại trừ 24 giờ, giới hạn 6 và yêu cầu có điểm. `index.html` hiển thị khu đề xuất trước danh sách mới cập nhật; 6 cột trên máy tính, 3 trên màn hình vừa và 2 trên điện thoại.
+
+### 3. Methods and Algorithms — Phương pháp và thuật toán
+Truy vấn đếm riêng lượt xem/bình luận/bình chọn có thời điểm từ mốc trượt 24 giờ đến hiện tại thực tế ghi dữ liệu. Trọng số dùng chung với bảng xếp hạng. Chỉ lấy truyện công khai chưa ẩn; sắp theo điểm, số bình chọn, lượt xem, mã truyện giảm dần để kết quả ổn định khi bằng điểm. Không có hoạt động thì trả danh sách trống và không hiện khu đề xuất, không tự bịa điểm hoặc lấy dữ liệu cả đời thay thế. Thời gian là Instant và cột thời gian có múi giờ, tránh tính nhầm theo ngày lịch.
+
+### 4. Design Decisions — Quyết định thiết kế
+Không thêm lịch chạy hay bộ nhớ đệm giữ danh sách đề xuất, để truyện vừa ẩn không còn xuất hiện từ kết quả cũ. Chi phí thêm một truy vấn xếp hạng trên lượt mở trang chủ không lọc; chưa đo tải lớn. Đây là đề xuất phổ biến chung, không cá nhân hóa theo lịch sử người đọc.
+
+### 5. Architecture and Data Flow — Kiến trúc và luồng dữ liệu
+Truy cập trang chủ không tìm kiếm → xác định mốc 24 giờ → truy vấn tương tác hiện hành → lấy tối đa 6 → hiển thị ảnh/tên/điểm và đường dẫn chi tiết. Tìm kiếm không chạy truy vấn đề xuất. Bình chọn bị bỏ sẽ không được tính; bình chọn còn hiệu lực nhưng tạo ngoài 24 giờ không cộng điểm đề xuất.
+
+### 6. Files Changed — Các file thay đổi
+`HomeController.java`: lấy đề xuất đúng ngữ cảnh. `index.html`, `catalog.css`: bố cục đề xuất và đường dẫn. `HomeControllerTest.java`: kiểm tra mốc 24 giờ và không truy vấn khi tìm kiếm. `SchemaMigrationTest.java`: kiểm tra thứ tự/giới hạn trên dữ liệu PostgreSQL tạm. `UiTemplateTest.java`: dữ liệu mẫu hiển thị. `plan.md`, `reports.md`: hoàn tất mục 11.
+
+### 7. Testing and Validation — Kiểm thử
+`RUN_DATABASE_TESTS=true` với `mvn -o -Dmaven.compiler.proc=none -Dnet.bytebuddy.experimental=true test`: **49 kiểm thử đạt, không bỏ qua**. Dữ liệu tạm kiểm tra truyện có hoạt động quá 24 giờ bị loại; truyện ẩn không lọt; điểm 100/20/5/1 đúng công thức; lấy đúng 6 và thứ tự khi bằng điểm; mốc tương lai trả rỗng. `node scripts/verify-reading-ui.cjs` đạt 320/390/1280; đã xem ảnh chụp trang chủ điện thoại, khu đề xuất/tìm kiếm không chồng lên nhau.
+
+### 8. Limitations and Future Improvements — Hạn chế và cải tiến
+Chưa có tương tác ở các bảng mới thì khu đề xuất chưa hiện. Không chuyển số tổng hợp cũ thành sự kiện có thời điểm giả. Quy tắc đếm và hạn chế gian lận giữ như mục 10. Chưa tối ưu bằng bảng tổng hợp cho lượng tương tác lớn; cần đo trước khi thêm.
+
+### 9. Final Result — Kết quả cuối cùng
+Mục 11 đã đánh ✅ sau kiểm thử. Các mục có thể thực hiện trong kế hoạch đã hoàn tất; mục 3 được người dùng loại bỏ và phạm vi mục 5 đã chốt chỉ cần bản nháp. Công thức có thể đổi sau và đã được ghi rõ trong báo cáo mục 10.

@@ -83,6 +83,7 @@ class UiTemplateTest {
         values.put("commentPage",0);
         values.put("comments",List.of(new main.service.EngagementService.Comment(1,7,"Người đọc","<script>không chạy</script>",java.time.Instant.now(),false)));
         values.put("rankedProducts",List.of(new main.service.EngagementService.Ranked(101,product.getTitle(),null,5,1,1,115)));
+        values.put("recommendedProducts", values.get("rankedProducts"));
         values.put("isStaff", false);
         values.put("canEdit", true);
         values.put("canManageProduct", false);

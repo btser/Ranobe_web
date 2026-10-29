@@ -34,6 +34,17 @@
 
     <!-- CONTENT MAIN -->
     <div class="container">
+        <section class="recommendations" th:if="${recommendedProducts != null and !#lists.isEmpty(recommendedProducts)}" aria-labelledby="recommendationHeading">
+            <h2 id="recommendationHeading">Đề xuất trong 24 giờ</h2>
+            <div class="recommendation-grid">
+                <a class="recommendation-card" th:each="entry : ${recommendedProducts}" th:href="@{${entry.path}}">
+                    <img th:src="${#strings.isEmpty(entry.coverImage) ? siteDefaultCover : entry.coverImage}"
+                         th:data-fallback="${siteDefaultCover}" onerror="this.onerror=null;this.src=this.dataset.fallback" alt="Bìa truyện" loading="lazy">
+                    <b th:text="${entry.title}">Tên truyện</b>
+                    <small th:text="${entry.score} + ' điểm trong 24 giờ'"></small>
+                </a>
+            </div>
+        </section>
         <div class="section-head">
             <div class="section-titles">
                 <span class="pill">Truyện dịch</span>

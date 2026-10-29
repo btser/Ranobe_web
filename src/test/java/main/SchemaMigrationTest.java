@@ -121,4 +121,28 @@ class SchemaMigrationTest {
                     () -> tx.executeWithoutResult(s -> service.vote(1,1,true)));
         });
     }
+
+    @Test
+    void recommendationsUseOnlyLast24HoursAndReturnAtMostSixPublicBooks() throws Exception {
+        isolated((connection,schema,p) -> {
+            flyway(p,schema).migrate();
+            JdbcTemplate jdbc = new JdbcTemplate(new SingleConnectionDataSource(connection,true));
+            var service = new EngagementService(jdbc);
+            jdbc.update("INSERT INTO users(user_id,user_name) VALUES (1,'Reader')");
+            for(int id=1;id<=9;id++) jdbc.update("INSERT INTO products(product_id,title,status) VALUES (?,?,'PUBLIC')",id,"Book "+id);
+            jdbc.update("UPDATE products SET is_deleted=TRUE WHERE product_id=9");
+            Instant now=Instant.now();
+            jdbc.update("INSERT INTO product_views(product_id,viewer_key,view_bucket,viewed_at) VALUES (1,'old',1,?)",
+                    Timestamp.from(now.minusSeconds(25*3600)));
+            jdbc.update("INSERT INTO product_votes(product_id,user_id,created_at) VALUES (2,1,?),(9,1,?)",
+                    Timestamp.from(now.minusSeconds(300)),Timestamp.from(now));
+            jdbc.update("INSERT INTO product_comments(product_id,user_id,body) VALUES (3,1,'one'),(3,1,'two')");
+            for(int i=0;i<5;i++) service.recordView(4,"view"+i,now);
+            for(int id=5;id<=8;id++) service.recordView(id,"one",now);
+            var recent=service.ranking(now.minusSeconds(24*3600),6,true);
+            assertEquals(List.of(2,3,4,8,7,6),recent.stream().map(EngagementService.Ranked::productId).toList());
+            assertEquals(List.of(100L,20L,5L,1L,1L,1L),recent.stream().map(EngagementService.Ranked::score).toList());
+            assertTrue(service.ranking(now.plusSeconds(3600),6,true).isEmpty());
+        });
+    }
 }

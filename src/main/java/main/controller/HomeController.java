@@ -25,13 +25,16 @@ public class HomeController {
     private final AccountRepository accountRepository;
     private final ChapterRepository chapterRepository;
     private final CategoryRepository categoryRepository;
+    private final main.service.EngagementService engagement;
 
     public HomeController(ProductRepository productRepository, AccountRepository accountRepository,
-                          ChapterRepository chapterRepository, CategoryRepository categoryRepository) {
+                          ChapterRepository chapterRepository, CategoryRepository categoryRepository,
+                          main.service.EngagementService engagement) {
         this.productRepository = productRepository;
         this.accountRepository = accountRepository;
         this.chapterRepository = chapterRepository;
         this.categoryRepository = categoryRepository;
+        this.engagement = engagement;
     }
 
     @GetMapping("/")
@@ -64,6 +67,8 @@ public class HomeController {
         artist = clean(artist);
         uploader = clean(uploader);
         sort = CatalogSearch.sortKey(sort);
+        model.addAttribute("recommendedProducts", !advanced && q.isEmpty()
+                ? engagement.ranking(java.time.Instant.now().minus(java.time.Duration.ofHours(24)),6,true) : List.of());
         categoryId = CatalogSearch.categoryIds(categoryId);
         var results = productRepository.findAll(CatalogSearch.matchingCategories(q, author, artist, uploader,
                 categoryId, staff, sort), PageRequest.of(Math.min(100000, Math.max(0, page)), 24));
