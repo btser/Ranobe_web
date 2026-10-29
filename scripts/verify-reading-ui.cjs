@@ -35,7 +35,7 @@ let browser;
 
     for (const width of [320, 390, 1280]) {
         await page.setViewportSize({ width, height: 844 });
-        for (const name of ['index', 'search', 'chapter-detail', 'chapter-edit', 'product-detail']) {
+        for (const name of ['index', 'search', 'chapter-detail', 'chapter-edit', 'product-detail', 'ranking']) {
             await page.goto(base + '/' + name + '.html');
             assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), name + ' overflows at ' + width);
         }

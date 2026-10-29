@@ -44,6 +44,7 @@ public class ProductController {
     private final LocalImageStorageService localImageStorageService;
     private final R2StorageService r2StorageService;
     private final main.service.AccessPolicy access;
+    private final main.service.EngagementService engagement;
 
     public ProductController(ProductRepository productRepository,
                              CategoryRepository categoryRepository,
@@ -52,7 +53,8 @@ public class ProductController {
                              ChapterRepository chapterRepository,
                              ChapterImageRepository chapterImageRepository,
                              LocalImageStorageService localImageStorageService,
-                             R2StorageService r2StorageService, main.service.AccessPolicy access) {
+                             R2StorageService r2StorageService, main.service.AccessPolicy access,
+                             main.service.EngagementService engagement) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
         this.accountRepository = accountRepository;
@@ -62,6 +64,7 @@ public class ProductController {
         this.localImageStorageService = localImageStorageService;
         this.r2StorageService = r2StorageService;
         this.access = access;
+        this.engagement = engagement;
     }
 
     /** Về trang chỉnh sửa truyện (link đẹp, cần tên truyện nên tra theo id). */
@@ -134,7 +137,8 @@ public class ProductController {
 
     @GetMapping("/{id}/{slug}")
     public String showProductDetail(@PathVariable("id") Integer productId,
-                                    @PathVariable("slug") String slug, Model model, HttpSession session) {
+                                    @PathVariable("slug") String slug, Model model, HttpSession session,
+                                    @RequestParam(defaultValue="0") int commentPage) {
         Product product = productRepository.findByIdWithDetails(productId).orElse(null);
         if (product == null) {
             return "redirect:/";
@@ -164,6 +168,16 @@ public class ProductController {
         model.addAttribute("canManageProduct", canManageProduct(currentUser, product));
         var reading = main.service.ReadingNavigation.build(product.getPath(), volumes, null);
         model.addAttribute("firstChapterPath", reading.chapters().isEmpty() ? null : reading.chapters().get(0).path());
+        if (product.getStatus() == Status.PUBLIC && !product.isDeleted()) {
+            if (session.getAttribute("viewKey") == null) session.setAttribute("viewKey",java.util.UUID.randomUUID().toString());
+            engagement.recordView(productId,session.getAttribute("viewKey").toString(),java.time.Instant.now());
+            if (session.getAttribute("interactionToken") == null) session.setAttribute("interactionToken",java.util.UUID.randomUUID().toString());
+            model.addAttribute("interactionToken",session.getAttribute("interactionToken"));
+            model.addAttribute("engagementSummary",engagement.signals(productId));
+            model.addAttribute("hasVoted",currentUser != null && engagement.voted(productId,currentUser.getUserId()));
+            model.addAttribute("comments",engagement.comments(productId,commentPage));
+            model.addAttribute("commentPage",Math.max(0,Math.min(commentPage,100000)));
+        }
 
         return "product-detail";
     }

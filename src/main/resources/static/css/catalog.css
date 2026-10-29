@@ -1,5 +1,10 @@
 body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background-color: #121212; color: #e0e0e0; }
 .category-options { grid-column:1 / -1; border:1px solid #484848; border-radius:4px; margin:0; padding:12px; min-width:0; }
+.ranking-list { display:grid; gap:12px; }
+.ranking-row { display:flex; align-items:center; gap:18px; padding:16px; background:#222; color:#eee; text-decoration:none; border-radius:5px; overflow-wrap:anywhere; }
+.ranking-row > span { flex:1; min-width:0; }
+.ranking-row small { display:block; margin-top:6px; color:#aaa; }
+.ranking-row > b { white-space:nowrap; color:#ffca28; }
 .category-options p { margin:4px 0 10px; color:#aaa; font-size:13px; }
 .category-options > div { display:flex; flex-wrap:wrap; gap:10px 18px; }
 .advanced-search-form .category-options label { display:inline-flex; align-items:center; gap:6px; }

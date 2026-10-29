@@ -64,6 +64,13 @@
         .chapter-list a { color:#fff; text-decoration:none; }
         .chapter-list a:hover { color:#4da6ff; }
         .empty-note { color:#999; font-style:italic; padding:10px 0; }
+        .engagement-stats { display:flex; flex-wrap:wrap; gap:14px; color:#bbb; margin-bottom:14px; }
+        .comment-form textarea { width:100%; box-sizing:border-box; min-height:90px; background:#222; color:#eee; border:1px solid #555; border-radius:4px; padding:10px; font:inherit; }
+        .comment-form button, .vote-form button { background:#287c48; border:0; border-radius:4px; color:#fff; padding:9px 14px; cursor:pointer; margin:8px 0; }
+        .discussion-comment { border-top:1px solid #333; padding:14px 0; }
+        .discussion-comment p { white-space:pre-wrap; overflow-wrap:anywhere; margin:8px 0 0; }
+        .discussion-comment a { color:#4da6ff; }
+        .interaction-error { color:#ff8585; }
         .summary-box { white-space:pre-line; line-height:1.55; font-size:14px; color:#ddd; max-height:7.8em; overflow:hidden; position:relative; }
         .summary-box.open { max-height:none; }
         .summary-box:not(.open).long::after { content:''; position:absolute; left:0; right:0; bottom:0; height:2.5em; background:linear-gradient(to bottom, rgba(29,29,29,0), #1d1d1d); }
@@ -245,6 +252,39 @@
     </section>
 </div>
 
+<section id="discussion" class="panel container" th:if="${engagementSummary != null}">
+    <h2>Bình chọn và thảo luận</h2>
+    <div class="engagement-stats">
+        <span th:text="${engagementSummary.views} + ' lượt xem'"></span>
+        <span th:text="${engagementSummary.votes} + ' bình chọn'"></span>
+        <span th:text="${engagementSummary.comments} + ' bình luận'"></span>
+        <a href="/xep-hang" style="color:#4da6ff">Xem xếp hạng</a>
+    </div>
+    <p class="interaction-error" role="alert" th:if="${engagementError != null}" th:text="${engagementError}"></p>
+    <th:block th:if="${user != null}">
+        <form class="vote-form" method="post" th:action="@{/truyen/{id}/vote(id=${product.productId})}">
+            <input type="hidden" name="interactionToken" th:value="${interactionToken}">
+            <input type="hidden" name="selected" th:value="${!hasVoted}">
+            <button type="submit" th:text="${hasVoted ? 'Bỏ bình chọn' : 'Bình chọn'}">Bình chọn</button>
+        </form>
+        <form class="comment-form" method="post" th:action="@{/truyen/{id}/comment(id=${product.productId})}">
+            <input type="hidden" name="interactionToken" th:value="${interactionToken}">
+            <label for="commentBody">Bình luận</label>
+            <textarea id="commentBody" name="body" maxlength="2000" required th:text="${commentBody}" placeholder="Nội dung bình luận"></textarea>
+            <button type="submit">Gửi bình luận</button>
+        </form>
+    </th:block>
+    <p th:if="${user == null}"><a href="/login" style="color:#4da6ff">Đăng nhập</a> để bình chọn hoặc bình luận.</p>
+    <article class="discussion-comment" th:each="comment : ${comments}">
+        <a th:href="@{/users/{id}(id=${comment.userId})}" th:text="${comment.userName}"></a>
+        <small th:text="${#temporals.format(comment.createdAt, 'dd/MM/yyyy HH:mm', 'Asia/Bangkok')}"></small>
+        <p th:text="${comment.body}"></p>
+    </article>
+    <nav class="engagement-stats" aria-label="Phân trang bình luận">
+        <a th:if="${commentPage > 0}" th:href="@{${product.path}(commentPage=${commentPage - 1})} + '#discussion'">Trang trước</a>
+        <a th:if="${(commentPage + 1) * 20 < engagementSummary.comments}" th:href="@{${product.path}(commentPage=${commentPage + 1})} + '#discussion'">Trang sau</a>
+    </nav>
+</section>
 <script th:src="@{/js/reading-storage.js}"></script>
 <script th:src="@{/js/continue-reading.js}"></script>
 <script>

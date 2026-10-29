@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Bảng xếp hạng - Ranobe Kingdom</title>
+    <link rel="icon" type="image/png" th:href="${siteLogoSmall}">
+    <link rel="stylesheet" th:href="@{/css/catalog.css}">
+</head>
+<body>
+<nav class="navbar"><a href="/" class="logo">Ranobe Kingdom</a><a href="/" class="advanced-link">Trang chủ</a></nav>
+<main class="container">
+    <h1>Bảng xếp hạng</h1>
+    <p>Điểm = bình chọn × 100 + bình luận × 10 + lượt xem.</p>
+    <div class="ranking-list">
+        <a class="ranking-row" th:each="entry,position : ${rankedProducts}" th:href="@{${entry.path}}">
+            <strong th:text="${position.count}">1</strong>
+            <span><b th:text="${entry.title}">Truyện</b><small th:text="${entry.views} + ' lượt xem · ' + ${entry.comments} + ' bình luận · ' + ${entry.votes} + ' bình chọn'"></small></span>
+            <b th:text="${entry.score} + ' điểm'"></b>
+        </a>
+    </div>
+    <p th:if="${#lists.isEmpty(rankedProducts)}">Chưa có truyện công khai.</p>
+</main>
+</body></html>

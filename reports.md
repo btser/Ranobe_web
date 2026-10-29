@@ -223,3 +223,40 @@ Thư viện tải thành công và SQL chạy trên PostgreSQL 16.14 cục bộ,
 
 ### 9. Final Result — Kết quả cuối cùng
 Mục 9 đánh ✅ sau 44 kiểm thử thành công. Các lần thêm trường sau phải bổ sung file SQL phiên bản mới; cấu hình riêng tư và `.gitignore` giữ nguyên.
+
+---
+
+## Report 10 — Xếp hạng theo tương tác
+
+**Date:** 2026-10-29
+**Status:** Completed
+**Branch:** sub
+
+### 1. Task Overview — Tổng quan
+Người dùng chốt công thức tạm thời: **1 bình chọn = 100 điểm; 1 bình luận = 10 điểm; 1 lượt xem = 1 điểm**. Có thể đổi sau. Cần dữ liệu tương tác thực thay vì dùng trường trung bình bình chọn cũ làm số bình chọn.
+
+### 2. Implementation Summary — Nội dung triển khai
+Thêm trang `/xep-hang`, liên kết điều hướng, phần bình chọn/bình luận trên truyện công khai, thống kê tương tác. Thêm ba bảng qua V3: `product_views`, `product_votes`, `product_comments`. Không tự quy đổi dữ liệu tổng hợp cũ chưa biết nguồn. Bình chọn/bình luận chỉ dành cho tài khoản đang hoạt động; cơ chế khóa phiên hiện có vẫn kiểm tra trước yêu cầu ghi.
+
+### 3. Methods and Algorithms — Phương pháp và thuật toán
+`EngagementService.recordView()` ghi một khóa gồm truyện, mã phiên ngẫu nhiên và khung 30 phút; khóa chính và `ON CONFLICT DO NOTHING` chống tải lại tăng liên tục. Đây là khung thời gian cố định, không phải khoảng cách trượt kể từ lượt trước. Không thu địa chỉ mạng. Một tài khoản có tối đa một bình chọn/truyện; thao tác chọn rõ trạng thái nên gửi lại không tăng trùng, bỏ chọn xóa bình chọn và điểm tương ứng. `comment()` giới hạn 1–2000 ký tự và 10 giây giữa bình luận; khóa hàng người dùng trong giao dịch giúp các yêu cầu đồng thời không vượt giới hạn. Bảng truyện được khóa khi ghi để kiểm tra trạng thái công khai cùng giao dịch.
+
+`signals()` đếm riêng ba bảng tránh nhân bản khi nối. `ranking()` dùng các truy vấn đếm có chỉ mục và phép tính số nguyên lớn, sắp giảm theo điểm, số bình chọn, lượt xem, mã truyện. Bảng xếp hạng lấy tối đa 100 truyện công khai chưa ẩn. Các trọng số tập trung tại `VIEW_WEIGHT`, `COMMENT_WEIGHT`, `VOTE_WEIGHT` trong `EngagementService`; công thức được ghi ở giao diện, cần cập nhật phần chữ khi đổi trọng số. Chi phí đếm phụ thuộc số truyện và số tương tác; không có số đo để bảo đảm tốc độ cho lượng truy cập lớn.
+
+### 4. Design Decisions — Quyết định thiết kế
+Ghi tương tác có thời gian để mục 11 dùng dữ liệu 24 giờ. Không thêm công cụ chống gian lận phức tạp: có thể tăng lượt xem bằng nhiều phiên trình duyệt và nhiều bình luận hợp lệ vẫn cộng điểm. Bình luận hiển thị bằng văn bản đã thoát ký tự, không chạy mã HTML. Các biểu mẫu dùng mã xác nhận riêng trong phiên để chặn gửi yêu cầu từ trang khác; không thay đổi hệ thống quyền biên tập truyện.
+
+### 5. Architecture and Data Flow — Kiến trúc và luồng dữ liệu
+Mở trang chi tiết truyện công khai → ghi lượt xem có chống lặp → đọc thống kê/bình luận. Gửi bình chọn hoặc bình luận → kiểm tra phiên/tài khoản → xác minh mã biểu mẫu → giao dịch kiểm tra truyện và ghi → trở về thảo luận. Trang xếp hạng đọc dữ liệu công khai và tính điểm. Bình luận phân trang 20 mục, mới nhất trước. Lượt xem hiện tính ở trang chi tiết truyện, không cộng thêm trên từng chương.
+
+### 6. Files Changed — Các file thay đổi
+`V3__product_engagement.sql`, `EngagementService.java`, `EngagementController.java`: lưu và xử lý tương tác. `ProductController.java`: thống kê và bình luận trang truyện. `product-detail.html`, `ranking.html`, `index.html`, `catalog.css`: giao diện. `SchemaMigrationTest.java`, `EngagementControllerTest.java`, `UiTemplateTest.java`, `scripts/verify-reading-ui.cjs`: kiểm tra dữ liệu, quyền biểu mẫu, nội dung hiển thị và kích thước màn hình. `plan.md`, `reports.md`: ghi nhận công thức và hoàn tất.
+
+### 7. Testing and Validation — Kiểm thử
+Chạy toàn bộ `RUN_DATABASE_TESTS=true` với `mvn -o -Dmaven.compiler.proc=none -Dnet.bytebuddy.experimental=true test`: **47 kiểm thử đạt**. Sau khi gom trọng số, chạy lại `-Dtest=SchemaMigrationTest`: 3 kiểm thử dữ liệu đạt. Kiểm thử dùng lược đồ PostgreSQL tạm: đếm lặp, hai phiên xem khác nhau, bỏ bình chọn, truyện riêng tư/ẩn không lọt xếp hạng, giới hạn bình luận và tài khoản khóa bị từ chối. Kiểm thử bộ điều khiển chặn khách và mã biểu mẫu giả. Dựng trang kiểm tra điểm 115 và bình luận chứa thẻ mã được thoát ký tự. `node scripts/verify-reading-ui.cjs` đạt cả trang xếp hạng ở 320/390/1280.
+
+### 8. Limitations and Future Improvements — Hạn chế và cải tiến
+Chưa nhập lại số liệu lịch sử vào bảng mới, chưa có sửa/xóa/quản trị bình luận hoặc chống bình luận trùng theo nội dung. Chưa có cơ chế nhận diện người thật; quy tắc lượt xem chỉ giảm đếm lặp đơn giản. Đã thêm một thao tác ghi chống lặp khi mở trang truyện và đọc thống kê; có chi phí cơ sở dữ liệu, chưa đo tải thực. Các bảng sự kiện sẽ tăng dung lượng theo thời gian. Không dùng bảng `ranking` cũ để suy đoán dữ liệu mới.
+
+### 9. Final Result — Kết quả cuối cùng
+Mục 10 đã đánh ✅, công thức ghi rõ theo quyết định người dùng. Các kiểm tra trên dữ liệu tạm thành công; không tạo bình chọn/bình luận vào dữ liệu truyện hiện có để thử nghiệm.

@@ -29,8 +29,8 @@ Tìm theo tên truyện/tác giả, lọc nhiều thể loại và sắp xếp t
 # ✅9.Quản lý thay đổi cấu trúc cơ sở dữ liệu theo phiên bản.
 Mỗi lần thêm cột cần có bước bổ sung giá trị cho dữ liệu cũ và ràng buộc không để trống khi cần. Việc này tránh lặp lại lỗi truyện cũ bị sập sau khi thêm trường.
 
-# 10. Ranking
-Hệ thống sẽ sắp xếp thứ bậc theo lượt xem, bình luận, lượt vote của tác phẩm(product). Cách tính điểm thống nhất sau.
+# ✅10. Ranking
+Xếp hạng truyện công khai theo điểm = 100 × bình chọn + 10 × bình luận + lượt xem. Công thức tạm thời do người dùng chốt ngày 29/10/2026, có thể điều chỉnh sau.
 
 # 11.Recommend
 Dựa trên điểm (đề xuất ở phần 10. Ranking) được tính trong vòng 24h gần nhất. Hiện recommend khoảng 5-6 tác phẩm trên trang chủ.

@@ -11,6 +11,12 @@ import org.springframework.jdbc.datasource.init.ScriptUtils;
 import java.nio.file.*;
 import java.sql.*;
 import java.util.*;
+import main.service.EngagementService;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.SingleConnectionDataSource;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
+import java.time.Instant;
 import static org.junit.jupiter.api.Assertions.*;
 
 /** Chỉ tạo/xóa lược đồ tạm riêng, không chạy ứng dụng và không đụng bảng public. */
@@ -43,7 +49,7 @@ class SchemaMigrationTest {
     void emptyDatabaseMigratesAndMatchesAllEntities() throws Exception {
         isolated((connection, schema, p) -> {
             Flyway flyway = flyway(p, schema);
-            assertEquals(2, flyway.migrate().migrationsExecuted);
+            assertEquals(3, flyway.migrate().migrationsExecuted);
             assertEquals(0, flyway.migrate().migrationsExecuted);
             Configuration hibernate = new Configuration();
             hibernate.setProperty("hibernate.connection.url", p.getProperty("spring.datasource.url"));
@@ -69,13 +75,50 @@ class SchemaMigrationTest {
             sql.execute("INSERT INTO products(product_id,title,is_deleted,status) VALUES (5,'Truyện cũ',NULL,NULL)");
             sql.execute("INSERT INTO volumes(volume_id,product_id,sort_order,is_deleted) VALUES (6,5,NULL,NULL)");
             sql.execute("INSERT INTO chapters(chapter_id,volume_id,context,sort_order,is_deleted) VALUES (7,6,'Chữ tiếng Việt còn nguyên',NULL,NULL)");
-            assertEquals(2, flyway(p, schema).migrate().migrationsExecuted);
+            assertEquals(3, flyway(p, schema).migrate().migrationsExecuted);
             try(var result = sql.executeQuery("SELECT context,sort_order,is_deleted,is_completed FROM chapters WHERE chapter_id=7")) {
                 assertTrue(result.next());
                 assertEquals("Chữ tiếng Việt còn nguyên", result.getString(1));
                 assertEquals(0, result.getInt(2)); assertFalse(result.getBoolean(3)); assertTrue(result.getBoolean(4));
             }
             assertThrows(SQLException.class, () -> sql.execute("UPDATE chapters SET sort_order=NULL WHERE chapter_id=7"));
+        });
+    }
+
+    @Test
+    void interactionCountsAreIdempotentAndPrivateProductsNeverRank() throws Exception {
+        isolated((connection,schema,p) -> {
+            flyway(p,schema).migrate();
+            var source = new SingleConnectionDataSource(connection,true);
+            JdbcTemplate jdbc = new JdbcTemplate(source);
+            var tx = new TransactionTemplate(new DataSourceTransactionManager(source));
+            var service = new EngagementService(jdbc);
+            jdbc.update("INSERT INTO users(user_id,user_name) VALUES (1,'Reader')");
+            jdbc.update("INSERT INTO accounts(user_id,username,email,password) VALUES (1,'reader','reader@example.test','test-hash')");
+            jdbc.update("INSERT INTO products(product_id,title,status) VALUES (1,'Công khai','PUBLIC'),(2,'Riêng tư','PRIVATE'),(3,'Ẩn','PUBLIC')");
+            jdbc.update("UPDATE products SET is_deleted=TRUE WHERE product_id=3");
+            Instant now=Instant.now();
+            service.recordView(1,"browser",now);
+            service.recordView(1,"browser",now);
+            service.recordView(1,"other-browser",now);
+            service.recordView(2,"browser",now);
+            service.recordView(3,"browser",now);
+            tx.executeWithoutResult(s -> service.vote(1,1,true));
+            tx.executeWithoutResult(s -> service.vote(1,1,true));
+            tx.executeWithoutResult(s -> service.comment(1,1,"<script>plain text</script>"));
+            assertEquals(new EngagementService.Signals(2,1,1),service.signals(1));
+            assertEquals(112,service.signals(1).score());
+            assertEquals(1,service.ranking(Instant.EPOCH,100,false).size());
+            assertEquals(112,service.ranking(Instant.EPOCH,100,false).get(0).score());
+            assertTrue(service.ranking(now.plusSeconds(3600),6,true).isEmpty());
+            assertEquals("<script>plain text</script>",service.comments(1,0).get(0).body());
+            tx.executeWithoutResult(s -> service.vote(1,1,false));
+            assertEquals(12,service.signals(1).score());
+            assertThrows(org.springframework.web.server.ResponseStatusException.class,
+                    () -> tx.executeWithoutResult(s -> service.comment(1,1,"Too soon")));
+            jdbc.update("UPDATE accounts SET is_deleted=TRUE WHERE user_id=1");
+            assertThrows(org.springframework.web.server.ResponseStatusException.class,
+                    () -> tx.executeWithoutResult(s -> service.vote(1,1,true)));
         });
     }
 }

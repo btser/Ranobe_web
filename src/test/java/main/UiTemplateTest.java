@@ -77,6 +77,12 @@ class UiTemplateTest {
         values.put("readingNavigation", ReadingNavigation.build(product.getPath(), volumes, 1));
         values.put("firstChapterPath", ReadingNavigation.build(product.getPath(), volumes, null).chapters().get(0).path());
         values.put("isOwner", true);
+        values.put("engagementSummary", new main.service.EngagementService.Signals(5,1,1));
+        values.put("hasVoted",false);
+        values.put("interactionToken","test-token");
+        values.put("commentPage",0);
+        values.put("comments",List.of(new main.service.EngagementService.Comment(1,7,"Người đọc","<script>không chạy</script>",java.time.Instant.now(),false)));
+        values.put("rankedProducts",List.of(new main.service.EngagementService.Ranked(101,product.getTitle(),null,5,1,1,115)));
         values.put("isStaff", false);
         values.put("canEdit", true);
         values.put("canManageProduct", false);
@@ -107,7 +113,7 @@ class UiTemplateTest {
         values.put("accountState", "all"); values.put("productState", "all");
         Path output = Path.of("target", "ui-preview");
         Files.createDirectories(output);
-        for (String template : List.of("chapter-detail", "product-detail", "chapter-edit", "index", "search", "admin")) {
+        for (String template : List.of("chapter-detail", "product-detail", "chapter-edit", "index", "search", "admin", "ranking")) {
             values.put("advancedSearch", "search".equals(template));
             MockHttpServletRequest request = new MockHttpServletRequest(servlet);
             request.setRequestURI("/");
@@ -116,6 +122,13 @@ class UiTemplateTest {
             String html = engine.process(template, context);
             assertTrue(html.contains("<html"), template);
             assertFalse(html.contains("th:action"), template);
+            if (template.equals("ranking")) {
+                assertTrue(html.contains("115 điểm"));
+                assertTrue(html.contains(product.getTitle()));
+            }
+            if (template.equals("product-detail")) {
+                assertTrue(html.contains("&lt;script&gt;không chạy&lt;/script&gt;"));
+            }
             Files.writeString(output.resolve(template + ".html"), html);
         }
         values.put("volume", volume);
