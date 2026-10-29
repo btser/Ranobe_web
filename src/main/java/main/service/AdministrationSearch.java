@@ -29,8 +29,13 @@ public final class AdministrationSearch {
         };
     }
     public static Specification<Product> products(String q, String state) {
-        return (root, query, cb) -> cb.and(cb.like(cb.lower(root.get("title")), pattern(q), '!'),
+        return (root, query, cb) -> {
+            if (query.getResultType() != Long.class && query.getResultType() != long.class) {
+                root.fetch("uploader", JoinType.LEFT);
+            }
+            return cb.and(cb.like(cb.lower(root.get("title")), pattern(q), '!'),
                 "hidden".equals(state) ? cb.isTrue(root.get("isDeleted"))
                         : "active".equals(state) ? cb.isFalse(root.get("isDeleted")) : cb.conjunction());
+        };
     }
 }

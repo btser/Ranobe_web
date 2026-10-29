@@ -178,6 +178,8 @@ Biểu mẫu gửi tham số → bộ điều khiển chuẩn hóa → điều k
 ### 6. Files Changed — Các file thay đổi
 `HomeController.java`, `CatalogSearch.java`, `search.html`, `catalog.css`: nhiều thể loại. `AdminController.java`, `AdministrationSearch.java`, `AccountRepository.java`, `admin.html`: truy vấn/phân trang quản trị. `UiTemplateTest.java`, `AdminControllerTest.java`, `CatalogSearchTest.java`, `scripts/verify-reading-ui.cjs`, `scripts/verify-live-reading.cjs`: kiểm tra và cập nhật lựa chọn thể loại. `plan.md` và `reports.md`: ghi nhận hoàn tất. Không thay đổi `.gitignore`.
 
+Bổ sung sau rà soát: truy vấn trang truyện quản trị tải sẵn người đăng bằng phép nối trái; truy vấn đếm không tải quan hệ. Điều này tránh lỗi tải dữ liệu quan hệ sau khi phiên truy vấn đã đóng. Có kiểm thử riêng hai loại truy vấn.
+
 ### 7. Testing and Validation — Kiểm thử
 Đã chạy `mvn -o -Dmaven.compiler.proc=none -Dnet.bytebuddy.experimental=true test`: 41 kiểm thử đạt. Lần đầu kỳ vọng kiểm thử đếm một phép kiểm tra/thể loại nhưng thực tế có cả thể loại chính và bảng nối; đã sửa kỳ vọng thành hai và chạy lại thành công. Đã chạy `node scripts/verify-reading-ui.cjs`: đạt kiểm tra biểu mẫu, kích thước 320/390/1280 và các chức năng đọc/bản nháp. Mẫu `admin.html` được dựng trong kiểm thử giao diện. Chưa chạy script đọc dữ liệu thực sau thay đổi này.
 
