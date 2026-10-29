@@ -12,6 +12,9 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
+import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
+import software.amazon.awssdk.services.s3.model.S3Exception;
 
 import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
@@ -25,6 +28,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.net.URI;
 import java.time.Duration;
+import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -96,17 +101,46 @@ public class R2StorageService {
         }
     }
 
-    /** Xóa ảnh trên R2 nếu url thuộc bucket của mình. Lỗi thì bỏ qua. */
+    /** Bỏ ảnh ở giao diện chưa đồng nghĩa xóa tệp. Tác vụ nền sẽ kiểm tra tham chiếu rồi dọn. */
     public void deleteByUrl(String url) {
-        try {
-            if (url == null || !url.startsWith(publicUrl + "/")) {
-                return;
-            }
-            String key = url.substring(publicUrl.length() + 1);
-            s3.deleteObject(DeleteObjectRequest.builder().bucket(bucket).key(key).build());
-        } catch (Exception e) {
-            e.printStackTrace();
+        if (url != null && url.startsWith(publicUrl + "/")) {
+            log.debug("Ảnh cũ sẽ được tác vụ nền kiểm tra trước khi dọn.");
         }
+    }
+
+    public record StoredImage(String key, String etag, Instant modifiedAt) {}
+    public record ImagePage(List<StoredImage> images, String nextToken) {}
+
+    public String imageUrl(String key) { return publicUrl + "/" + key; }
+
+    public ImagePage listImages(String prefix, String continuationToken, int limit) {
+        var page = s3.listObjectsV2(ListObjectsV2Request.builder().bucket(bucket).prefix(prefix)
+                .continuationToken(continuationToken).maxKeys(limit)
+                .overrideConfiguration(c -> c.apiCallTimeout(Duration.ofSeconds(10))).build());
+        if (Boolean.TRUE.equals(page.isTruncated()) && page.nextContinuationToken() == null) {
+            throw new IllegalStateException("R2 không trả con trỏ của trang tiếp theo.");
+        }
+        return new ImagePage(page.contents().stream()
+                .map(o -> new StoredImage(o.key(), o.eTag(), o.lastModified())).toList(),
+                Boolean.TRUE.equals(page.isTruncated()) ? page.nextContinuationToken() : null);
+    }
+
+    public StoredImage findImage(String key) {
+        try {
+            var object = s3.headObject(HeadObjectRequest.builder().bucket(bucket).key(key)
+                    .overrideConfiguration(c -> c.apiCallTimeout(Duration.ofSeconds(5))).build());
+            return new StoredImage(key, object.eTag(), object.lastModified());
+        } catch (S3Exception e) {
+            if (e.statusCode() == 404) return null;
+            throw e;
+        }
+    }
+
+    // Chỉ gọi sau khi đã kiểm tra tham chiếu trong tác vụ nền.
+    void deleteUnusedImage(String key) {
+        if (!ImageCleanupService.managed(key)) throw new IllegalArgumentException("Không thuộc nhóm ảnh được dọn.");
+        s3.deleteObject(DeleteObjectRequest.builder().bucket(bucket).key(key)
+                .overrideConfiguration(c -> c.apiCallTimeout(Duration.ofSeconds(5))).build());
     }
 
     /** Resize về tối đa 1600px và nén JPEG 85%. Trả null nếu không nén được (GIF/PNG trong suốt/WebP...). */

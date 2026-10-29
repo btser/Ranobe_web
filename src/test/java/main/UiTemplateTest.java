@@ -107,5 +107,26 @@ class UiTemplateTest {
             assertFalse(html.contains("th:action"), template);
             Files.writeString(output.resolve(template + ".html"), html);
         }
+        values.put("volume", volume);
+        values.put("token", "12345678-1234-1234-1234-123456789abc");
+        values.put("pageCount", 10);
+        values.put("chapters", List.of(Map.of("title", "Chương thử", "text", "Nội dung giữ lại",
+                "skipDefault", false, "startPage", 1, "length", 16)));
+        values.put("images", List.of(Map.of("file", "p001.jpg", "chapterIndex", 0, "kindName", "COLOR", "selected", false)));
+        for (boolean retry : List.of(false, true)) {
+            if (retry) {
+                values.put("retryValues", Map.of("poolTitle", "Minh họa đã sửa"));
+                values.put("importFailure", "Không tải được ảnh p001.jpg");
+            }
+            MockHttpServletRequest request = new MockHttpServletRequest(servlet);
+            request.setRequestURI("/");
+            var context = new WebContext(app.buildExchange(request, new MockHttpServletResponse()), Locale.forLanguageTag("vi"), values);
+            String html = engine.process("volume-import-preview", context);
+            assertTrue(html.contains("Nội dung giữ lại"));
+            if (retry) {
+                assertTrue(html.contains("Thử lưu lại"));
+                assertTrue(html.contains("Minh họa đã sửa"));
+            }
+        }
     }
 }

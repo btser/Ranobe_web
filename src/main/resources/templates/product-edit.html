@@ -89,6 +89,9 @@
 </nav>
 
 <div class="container">
+    <div th:if="${param.importedAlready != null}" role="status" style="background:#173d24;border:1px solid #28a745;color:#bff0cc;padding:10px 14px;border-radius:6px;margin-bottom:12px;">
+        Lượt nhập này đã lưu thành công trước đó. Không tạo thêm chương trùng.
+    </div>
     <div th:if="${param.imported != null}" style="background:#173d24;border:1px solid #28a745;color:#bff0cc;padding:10px 14px;border-radius:6px;margin-bottom:12px;">
         Đã nhập <b th:text="${param.imported[0]}">0</b> chương
         <span th:if="${param.images != null}">và <b th:text="${param.images[0]}">0</b> ảnh</span>.

@@ -18,6 +18,9 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
@@ -62,17 +65,22 @@ public class PdfImportController {
     private final ChapterImageRepository chapterImageRepository;
     private final ProductRepository productRepository;
     private final R2StorageService r2StorageService;
+    private final JdbcTemplate jdbc;
+    private final TransactionTemplate transaction;
 
     public PdfImportController(VolumeRepository volumeRepository,
                                ChapterRepository chapterRepository,
                                ChapterImageRepository chapterImageRepository,
                                ProductRepository productRepository,
-                               R2StorageService r2StorageService) {
+                               R2StorageService r2StorageService, JdbcTemplate jdbc,
+                               PlatformTransactionManager transactionManager) {
         this.volumeRepository = volumeRepository;
         this.chapterRepository = chapterRepository;
         this.chapterImageRepository = chapterImageRepository;
         this.productRepository = productRepository;
         this.r2StorageService = r2StorageService;
+        this.jdbc = jdbc;
+        this.transaction = new TransactionTemplate(transactionManager);
     }
 
     // ---------- 1. Form upload PDF ----------
@@ -160,32 +168,62 @@ public class PdfImportController {
     @PostMapping("/{pid}/{pslug}/tap/{volumeId}/{vslug}/import-pdf/commit")
     public String commit(@PathVariable("volumeId") int volumeId,
                          @RequestParam Map<String, String> p,
-                         HttpSession session) {
+                         HttpSession session, Model model) {
 
         Volume volume = loadManaged(volumeId, session);
         if (volume == null) {
             return "redirect:/";
         }
-        int productId = volume.getProduct().getProductId();
-
         String token = p.get("token");
         if (token == null || !TOKEN.matcher(token).matches()) {
             return "redirect:" + editPath(volume) + "?importError=1";
         }
-        // Token chỉ dùng được 1 lần, đúng người tạo, đúng tập, chưa hết hạn (chặn bấm lưu trùng / dùng token người khác)
-        if (!consumeJob(token, session, volumeId)) {
-            return "redirect:" + editPath(volume) + "?importError=1";
+        try {
+            if (completed(token, sessionUserId(session), volumeId)) {
+                return "redirect:" + editPath(volume) + "?importedAlready=1";
+            }
+        } catch (Exception e) {
+            return retryPreview(model, volume, token, p, "Không kiểm tra được trạng thái nhập. Chưa gửi lại dữ liệu; hãy thử lại.");
+        }
+        ImportJob job = JOBS.get(token);
+        if (job == null || job.userId != sessionUserId(session) || job.volumeId != volumeId
+                || job.expiresAt < System.currentTimeMillis()) {
+            fillFormModel(model, volume, PdfAnalyzer.DEFAULT_PATTERN,
+                    "Bản xem trước đã hết hạn hoặc máy chủ đã khởi động lại. Hãy chọn lại PDF. Nếu lần trước đã lưu thành công, không nhập lại bản mới.");
+            return "volume-import";
+        }
+        if (!job.lock.tryLock()) {
+            return retryPreview(model, volume, token, p, "Lượt nhập này đang được xử lý. Hãy chờ rồi thử lại, không chọn lại PDF.");
+        }
+        try {
+            // Giữ mã xác nhận và tệp tạm khi thất bại. Chỉ hoàn tất sau giao dịch DB thành công.
+            return commitLocked(volume, token, p, session, model, job);
+        } catch (Exception e) {
+            log.error("Lưu lượt nhập PDF {} thất bại", token, e);
+            return retryPreview(model, volume, token, p,
+                    "Không lưu được lượt nhập. Các thay đổi trong cơ sở dữ liệu đã được hủy nếu giao dịch chưa hoàn tất. "
+                    + "Bấm lưu lại để kiểm tra và thử lại bằng cùng bản xem trước; hệ thống không tạo trùng nếu lượt trước đã hoàn tất.");
+        } finally {
+            job.expiresAt = System.currentTimeMillis() + JOB_TTL_MS;
+            job.lock.unlock();
+        }
+    }
+
+    private String commitLocked(Volume volume, String token, Map<String, String> p,
+                                HttpSession session, Model model, ImportJob job) throws IOException {
+        int volumeId = volume.getVolumeId();
+        int productId = volume.getProduct().getProductId();
+        if (completed(token, sessionUserId(session), volumeId)) {
+            return "redirect:" + editPath(volume) + "?importedAlready=1";
         }
         Path tmpDir = tmpRoot().resolve(token).normalize();
 
         // 1. Gộp / bỏ chương theo lựa chọn
         int chapterCount = clamp(parseInt(p.get("chapterCount"), 0), 0, MAX_CHAPTERS);
-        int[] mapTo = new int[chapterCount]; // chỉ số chương gốc -> chỉ số chương cuối cùng (-1 = bị bỏ)
         List<String> titles = new ArrayList<>();
         List<String> texts = new ArrayList<>();
         for (int i = 0; i < chapterCount; i++) {
             if (p.containsKey("skip_" + i)) {
-                mapTo[i] = -1;
                 continue;
             }
             String title = p.getOrDefault("title_" + i, "").strip();
@@ -193,11 +231,9 @@ public class PdfImportController {
             if (p.containsKey("merge_" + i) && !titles.isEmpty()) {
                 int last = titles.size() - 1;
                 texts.set(last, texts.get(last) + "\n\n" + text);
-                mapTo[i] = last;
             } else {
                 titles.add(title.isEmpty() ? "Chương " + (titles.size() + 1) : limit(title, 250));
                 texts.add(text);
-                mapTo[i] = titles.size() - 1;
             }
         }
 
@@ -209,7 +245,7 @@ public class PdfImportController {
         List<String> poolFiles = new ArrayList<>();
         for (int j = 0; j < imageCount; j++) {
             String f = p.get("img_" + j);
-            if (f == null || !IMG_FILE.matcher(f).matches() || !Files.isRegularFile(tmpDir.resolve(f))) {
+            if (f == null || !IMG_FILE.matcher(f).matches()) {
                 continue;
             }
             String kind = p.getOrDefault("imgKind_" + j, "BW");
@@ -223,34 +259,28 @@ public class PdfImportController {
         for (String t : texts) {
             java.util.regex.Matcher m = tokenPat.matcher(t);
             while (m.find()) {
-                if (Files.isRegularFile(tmpDir.resolve(m.group(1)))) {
-                    toUpload.add(m.group(1));
-                }
+                toUpload.add(m.group(1));
             }
         }
 
         // Tóm tắt lấy từ PDF -> ghi vào tóm tắt của tập (để trống thì giữ nguyên)
         String summary = p.getOrDefault("summary", "").strip();
-        if (!summary.isEmpty()) {
-            volume.setSummary(summary);
-            volumeRepository.save(volume);
-        }
-
         if (titles.isEmpty() && poolFiles.isEmpty()) {
-            deleteQuietly(tmpDir);
-            return "redirect:" + editPath(volume) + "?importError=2";
+            return retryPreview(model, volume, token, p, "Chưa chọn chương hoặc ảnh nào để nhập.");
         }
 
         // 3. Upload mỗi ảnh một lần (song song)
         List<String> fileList = new ArrayList<>(toUpload);
-        Map<String, String> urlOf = new HashMap<>();
-        int failed = 0;
+        Map<String, String> urlOf = job.uploaded;
+        Map<String, String> previouslyUploaded = Map.copyOf(urlOf);
+        List<String> failures = new ArrayList<>();
         ExecutorService exec = Executors.newFixedThreadPool(4);
         try {
             List<Future<String>> futures = new ArrayList<>();
             for (String f : fileList) {
                 Path file = tmpDir.resolve(f);
                 futures.add(exec.submit(() ->
+                        previouslyUploaded.containsKey(f) ? previouslyUploaded.get(f) :
                         r2StorageService.uploadBytes(Files.readAllBytes(file), "image/jpeg", "chapters/v" + volumeId)));
             }
             for (int j = 0; j < fileList.size(); j++) {
@@ -263,7 +293,7 @@ public class PdfImportController {
                     log.error("Upload ảnh PDF lỗi", e);
                 }
                 if (url == null) {
-                    failed++;
+                    failures.add(fileList.get(j));
                 } else {
                     urlOf.put(fileList.get(j), url);
                 }
@@ -271,9 +301,21 @@ public class PdfImportController {
         } finally {
             exec.shutdown();
         }
-        int ok = urlOf.size();
+        if (!failures.isEmpty()) {
+            return retryPreview(model, volume, token, p,
+                    "Chưa lưu chương nào: không tải được ảnh " + String.join(", ", failures)
+                    + ". Hãy bấm lưu để thử lại; ảnh đã tải thành công sẽ được dùng lại.");
+        }
+        int ok = fileList.size();
 
-        // 4. Tạo chương. Token ảnh trong text -> [img]link[/img] (ảnh lỗi thì bỏ dòng đó)
+        // 4. Lưu tất cả trong một giao dịch. Khóa tập để hai lượt nhập không lấy trùng thứ tự.
+        Integer savedCount = transaction.execute(status -> {
+        jdbc.queryForObject("SELECT volume_id FROM volumes WHERE volume_id=? FOR UPDATE", Integer.class, volumeId);
+        if (completed(token, sessionUserId(session), volumeId)) return -1;
+        if (!summary.isEmpty()) {
+            volume.setSummary(summary);
+            volumeRepository.save(volume);
+        }
         int order = chapterRepository.findMaxSortOrderByVolumeId(volumeId) + 1;
         Chapter pool = null;
         List<String> okPool = new ArrayList<>();
@@ -298,7 +340,8 @@ public class PdfImportController {
             StringBuilder sb = new StringBuilder();
             while (m.find()) {
                 String u = urlOf.get(m.group(1));
-                m.appendReplacement(sb, java.util.regex.Matcher.quoteReplacement(u == null ? "" : "[img]" + u + "[/img]"));
+                if (u == null) throw new IllegalStateException("Thiếu ảnh " + m.group(1));
+                m.appendReplacement(sb, java.util.regex.Matcher.quoteReplacement("[img]" + u + "[/img]"));
             }
             m.appendTail(sb);
             String body = sb.toString().replaceAll("\\n{3,}", "\n\n").strip();
@@ -307,16 +350,31 @@ public class PdfImportController {
         }
 
         productRepository.touch(productId, LocalDateTime.now());
+        jdbc.update("INSERT INTO pdf_import_receipts(token,user_id,volume_id,completed_at) VALUES (?,?,?,CURRENT_TIMESTAMP)",
+                token, sessionUserId(session), volumeId);
+        return createdCount;
+        });
         deleteQuietly(tmpDir);
+        JOBS.remove(token, job);
 
-        return "redirect:" + editPath(volume) + "?imported=" + createdCount
-                + "&images=" + ok + "&failed=" + failed;
+        return "redirect:" + editPath(volume) + (savedCount == -1 ? "?importedAlready=1" : "?imported=" + savedCount
+                + "&images=" + ok + "&failed=0");
     }
 
     // ---------- helpers ----------
 
     private static final long JOB_TTL_MS = 2 * 60 * 60 * 1000L;
-    private static final java.util.concurrent.ConcurrentHashMap<String, long[]> JOBS = new java.util.concurrent.ConcurrentHashMap<>();
+    private static final java.util.concurrent.ConcurrentHashMap<String, ImportJob> JOBS = new java.util.concurrent.ConcurrentHashMap<>();
+    private static class ImportJob {
+        final int userId;
+        final int volumeId;
+        volatile long expiresAt;
+        final java.util.concurrent.locks.ReentrantLock lock = new java.util.concurrent.locks.ReentrantLock();
+        final Map<String, String> uploaded = new HashMap<>();
+        ImportJob(int userId, int volumeId, long expiresAt) {
+            this.userId = userId; this.volumeId = volumeId; this.expiresAt = expiresAt;
+        }
+    }
 
     private static int sessionUserId(HttpSession session) {
         User u = (User) session.getAttribute("loggedInUser");
@@ -326,14 +384,38 @@ public class PdfImportController {
     /** Ghi nhận lượt phân tích: token -> {userId, volumeId, hạn}. */
     private static void registerJob(String token, HttpSession session, int volumeId) {
         long now = System.currentTimeMillis();
-        JOBS.values().removeIf(j -> j[2] < now);
-        JOBS.put(token, new long[]{sessionUserId(session), volumeId, now + JOB_TTL_MS});
+        JOBS.values().removeIf(j -> j.expiresAt < now && !j.lock.isLocked());
+        JOBS.put(token, new ImportJob(sessionUserId(session), volumeId, now + JOB_TTL_MS));
     }
 
-    /** Lấy và hủy token (dùng 1 lần). Sai người / sai tập / hết hạn / đã dùng -> false. */
-    private static boolean consumeJob(String token, HttpSession session, int volumeId) {
-        long[] j = JOBS.remove(token);
-        return j != null && j[0] == sessionUserId(session) && j[1] == volumeId && j[2] >= System.currentTimeMillis();
+    private boolean completed(String token, int userId, int volumeId) {
+        return Boolean.TRUE.equals(jdbc.queryForObject("SELECT EXISTS(SELECT 1 FROM pdf_import_receipts WHERE token=? AND user_id=? AND volume_id=?)",
+                Boolean.class, token, userId, volumeId));
+    }
+
+    private String retryPreview(Model model, Volume volume, String token, Map<String, String> p, String error) {
+        List<Map<String, Object>> chapters = new ArrayList<>();
+        for (int i = 0; i < clamp(parseInt(p.get("chapterCount"), 0), 0, MAX_CHAPTERS); i++) {
+            chapters.add(Map.of("title", p.getOrDefault("title_" + i, ""), "text", p.getOrDefault("text_" + i, ""),
+                    "skipDefault", p.containsKey("skip_" + i), "startPage", "—", "length", p.getOrDefault("text_" + i, "").length()));
+        }
+        List<Map<String, Object>> images = new ArrayList<>();
+        for (int i = 0; i < clamp(parseInt(p.get("imageCount"), 0), 0, MAX_IMAGES); i++) {
+            String file = p.getOrDefault("img_" + i, "");
+            if (IMG_FILE.matcher(file).matches()) images.add(Map.of("file", file,
+                    "chapterIndex", p.getOrDefault("imgCh_" + i, "-1"), "kindName", p.getOrDefault("imgKind_" + i, "BW"),
+                    "selected", p.containsKey("imgOn_" + i)));
+        }
+        model.addAttribute("volume", volume);
+        model.addAttribute("product", volume.getProduct());
+        model.addAttribute("token", token);
+        model.addAttribute("chapters", chapters);
+        model.addAttribute("images", images);
+        model.addAttribute("pageCount", "—");
+        model.addAttribute("summary", p.getOrDefault("summary", ""));
+        model.addAttribute("retryValues", p);
+        model.addAttribute("importFailure", error);
+        return "volume-import-preview";
     }
 
     /** Link đẹp của trang chỉnh sửa truyện chứa tập này. */

@@ -18,6 +18,7 @@
         .sub { color: #aaa; margin-bottom: 14px; }
         .box { background: #1e1e1e; border: 1px solid #333; border-radius: 8px; padding: 16px; }
         .hint { color: #999; font-size: 13px; line-height: 1.5; }
+        .import-error { background:#3a2020; border:1px solid #c66; padding:12px; border-radius:6px; color:#ffbaba; margin:16px 0; }
 
         .mode label { display: block; margin: 6px 0; cursor: pointer; }
         .mode input[type=text] { padding: 6px 8px; background: #2a2a2a; border: 1px solid #444; border-radius: 4px; color: #fff; width: 220px; }
@@ -58,6 +59,7 @@
 <div class="wrap">
     <a class="back" th:href="@{${product.path + '/tap/' + volume.volumeId + '/' + volume.slug + '/import-pdf'}}">← Chọn lại file khác</a>
     <h2>Xem trước nhập từ PDF</h2>
+    <div class="import-error" role="alert" th:if="${importFailure != null}" th:text="${importFailure}"></div>
     <div class="sub">
         Truyện <strong style="color:#fff;" th:text="${product.title}">Truyện</strong>
         | Tập <strong style="color:#fff;" th:text="${!#strings.isEmpty(volume.title) ? volume.title : '—'}">Tập</strong>
@@ -85,7 +87,7 @@
             <h3>🖼 Ảnh minh họa</h3>
             <div class="box mode">
                 <label>Tên chương chứa ảnh minh họa:
-                    <input type="text" name="poolTitle" value="Minh họa"></label>
+                    <input type="text" name="poolTitle" th:value="${retryValues != null ? retryValues.getOrDefault('poolTitle', 'Minh họa') : 'Minh họa'}"></label>
                 <div class="hint">
                     Ảnh nào được tick sẽ vào chương này (ảnh màu trước, mục lục, rồi đen trắng).
                     Ảnh nằm giữa nội dung truyện được chèn vào đúng vị trí giữa các đoạn văn (dòng <code>&#91;&#91;IMG:...&#93;&#93;</code> trong nội dung chương), không phụ thuộc việc tick.
@@ -104,7 +106,8 @@
                     <img th:src="@{'/uploads/tmp/' + ${token} + '/' + ${img.file}}" loading="lazy" alt="Minh họa">
                     <input type="hidden" th:name="'imgKind_' + ${st.index}" th:value="${img.kindName}">
                     <div class="meta">
-                        <label><input type="checkbox" class="imgOn" th:name="'imgOn_' + ${st.index}" checked>
+                        <label><input type="checkbox" class="imgOn" th:name="'imgOn_' + ${st.index}"
+                                      th:checked="${retryValues == null or img.selected}">
                             Vào Minh họa</label>
                     </div>
                 </div>
@@ -124,7 +127,8 @@
                 <span class="ch-no" th:text="'#' + ${st.count}">#1</span>
                 <input type="text" th:name="'title_' + ${st.index}" th:value="${c.title}">
                 <label><input type="checkbox" class="skip" th:name="'skip_' + ${st.index}" th:checked="${c.skipDefault}"> Bỏ</label>
-                <label th:if="${st.index > 0}"><input type="checkbox" th:name="'merge_' + ${st.index}"> Gộp lên trên</label>
+                <label th:if="${st.index > 0}"><input type="checkbox" th:name="'merge_' + ${st.index}"
+                    th:checked="${retryValues != null and retryValues.containsKey('merge_' + st.index)}"> Gộp lên trên</label>
             </div>
             <textarea th:name="'text_' + ${st.index}" th:text="${c.text}"></textarea>
             <div class="len">
@@ -135,7 +139,7 @@
 
         <div class="bar">
             <a class="btn-cancel" th:href="@{${product.path + '/edit'}}">Hủy</a>
-            <button type="submit" class="btn-save" id="saveBtn">💾 Lưu vào tập</button>
+            <button type="submit" class="btn-save" id="saveBtn" th:text="${importFailure != null ? 'Thử lưu lại' : '💾 Lưu vào tập'}">💾 Lưu vào tập</button>
         </div>
     </form>
 </div>
@@ -163,6 +167,11 @@
         const b = document.getElementById('saveBtn');
         b.disabled = true;
         b.textContent = 'Đang lưu và upload ảnh...';
+    });
+    window.addEventListener('pageshow', () => {
+        const button = document.getElementById('saveBtn');
+        button.disabled = false;
+        if (button.textContent === 'Đang lưu và upload ảnh...') button.textContent = 'Thử lưu lại';
     });
 </script>
 </body>

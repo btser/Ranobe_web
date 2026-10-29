@@ -5,6 +5,7 @@
 /bin/
 /Database/
 /uploads/
+/.m2/
 
 
 # hide database account
@@ -25,3 +26,4 @@ src/main/resources/application.properties
 .DS_Store
 *.log
 /plan.md
+/bao_cao.md
