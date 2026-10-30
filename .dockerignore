@@ -1,0 +1,13 @@
+# Only build inputs enter the Docker context.
+**
+!pom.xml
+!src/
+!src/main/
+!src/main/**
+# Local settings must never enter the deployed image.
+src/main/resources/application.properties
+src/main/resources/application-local.properties
+**/.env
+**/.env.*
+**/*.backup
+**/*.dump
