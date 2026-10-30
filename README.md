@@ -28,3 +28,11 @@ A web application publishing and read novel, light novel, manga(maybe)
 - Cloudflare: image storage
 - Apache PDFBox: read and analyze PDF documents
 
+## Deployment
+
+The application is deployed on Render using Docker
+- **Render:** hosts the Spring Boot application and Thymeleaf pages
+- **Neon:** hosts the PostgreSQL database
+- **Cloudflare R2:** stores images
+
+Because Render is free so you maybe have to wait a few minutes:) enjoy
