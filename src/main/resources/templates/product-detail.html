@@ -121,10 +121,11 @@
         
         <div class="cover-wrap">
             <div class="label">Truyện dịch</div>
-            <img class="cover"
-                 th:src="${#strings.isEmpty(product.coverImage)} ? ${siteDefaultCover} : ${product.coverImage}"
-                 th:data-fallback="${siteDefaultCover}" onerror="this.onerror=null;this.src=this.dataset.fallback"
-                 alt="Ảnh bìa">
+            <div class="cover">
+                <img th:if="${!#strings.isEmpty(product.coverImage)}" th:src="${product.coverImage}"
+                     onerror="this.onerror=null;this.style.visibility='hidden'"
+                     alt="Ảnh bìa" style="width:100%;height:100%;object-fit:cover;display:block">
+            </div>
         </div>
 
         <div class="info">
@@ -221,15 +222,12 @@
                      th:text="${!#strings.isEmpty(vol.title) ? vol.title : 'Tập ' + iterStat.count}">Tập 1</div>
             </div>
             <div class="volume">
-                <img class="volume-cover"
-                     th:if="${!#strings.isEmpty(vol.coverImage)}"
-                     th:src="${vol.coverImage}"
-                     alt="Bìa tập">
-
-                <img class="volume-cover"
-                     th:if="${#strings.isEmpty(vol.coverImage)}"
-                     th:src="${#strings.isEmpty(product.coverImage)} ? ${siteDefaultCover} : ${product.coverImage}"
-                     alt="Bìa tập">
+                <div class="volume-cover">
+                    <img th:if="${!#strings.isEmpty(vol.coverImage) or !#strings.isEmpty(product.coverImage)}"
+                         th:src="${!#strings.isEmpty(vol.coverImage) ? vol.coverImage : product.coverImage}"
+                         onerror="this.onerror=null;this.style.visibility='hidden'"
+                         alt="Bìa tập" style="width:100%;height:100%;object-fit:cover;display:block">
+                </div>
 
                 <div>
                     <p class="volume-summary" th:if="${!#strings.isEmpty(vol.summary)}" th:text="${vol.summary}"></p>

@@ -63,9 +63,9 @@ class UiTemplateTest {
         second.setChapters(chapters.subList(14, 28));
         List<Volume> volumes = List.of(empty, volume, second);
         Map<String, Object> values = new HashMap<>();
-        values.put("siteLogoSmall", "/images/default-cover.webp");
-        values.put("siteLogoBig", "/images/default-cover.webp");
-        values.put("siteDefaultCover", "/images/default-cover.webp");
+        String testLogo="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==";
+        values.put("siteLogoSmall", testLogo);
+        values.put("siteLogoBig", testLogo);
         values.put("product", product);
         values.put("volumes", volumes);
         values.put("chapter", chapters.get(0));
@@ -112,9 +112,14 @@ class UiTemplateTest {
         values.put("productResults", new PageImpl<>(List.of(product), PageRequest.of(0, 24), 30));
         values.put("accountQ", ""); values.put("productQ", "");
         values.put("accountState", "all"); values.put("productState", "all");
+        User profileUser = new User(); profileUser.setUserId(7); profileUser.setUserName("Người đăng");
+        values.put("profileUser", profileUser);
+        values.put("profileAccount", administrator);
+        values.put("canManageAccount", false);
+        values.put("statuses", List.of(Status.values()));
         Path output = Path.of("target", "ui-preview");
         Files.createDirectories(output);
-        for (String template : List.of("chapter-detail", "product-detail", "chapter-edit", "index", "search", "admin", "ranking")) {
+        for (String template : List.of("chapter-detail", "product-detail", "product-edit", "profile", "chapter-edit", "index", "search", "admin", "ranking")) {
             values.put("advancedSearch", "search".equals(template));
             MockHttpServletRequest request = new MockHttpServletRequest(servlet);
             request.setRequestURI("/");
@@ -123,6 +128,8 @@ class UiTemplateTest {
             String html = engine.process(template, context);
             assertTrue(html.contains("<html"), template);
             assertFalse(html.contains("th:action"), template);
+            assertFalse(html.contains("default-cover.webp"), template);
+            assertFalse(html.contains("data-fallback"), template);
             if (template.equals("ranking")) {
                 assertTrue(html.contains("115 điểm"));
                 assertTrue(html.contains(product.getTitle()));
@@ -131,6 +138,15 @@ class UiTemplateTest {
                 assertTrue(html.contains("&lt;script&gt;không chạy&lt;/script&gt;"));
             }
             Files.writeString(output.resolve(template + ".html"), html);
+        }
+        product.setCoverImage("https://images.example.test/custom-cover.png");
+        for (String template : List.of("index", "product-detail", "product-edit", "profile")) {
+            MockHttpServletRequest request = new MockHttpServletRequest(servlet);
+            request.setRequestURI("/");
+            var context = new WebContext(app.buildExchange(request, new MockHttpServletResponse()), Locale.forLanguageTag("vi"), values);
+            String html = engine.process(template, context);
+            assertTrue(html.contains("https://images.example.test/custom-cover.png"), template);
+            assertFalse(html.contains("data-fallback"), template);
         }
         values.put("volume", volume);
         values.put("token", "12345678-1234-1234-1234-123456789abc");

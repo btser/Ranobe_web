@@ -14,15 +14,12 @@ public class SiteAssetsAdvice {
 
     private final String small;
     private final String big;
-    private final String cover;
 
     public SiteAssetsAdvice(@Value("${r2.public-url}") String r2PublicUrl,
                             @Value("${site.logo-small-url:}") String smallOverride,
-                            @Value("${site.logo-big-url:}") String bigOverride,
-                            @Value("${site.default-cover-url:}") String coverOverride) {
+                            @Value("${site.logo-big-url:}") String bigOverride) {
         String base = r2PublicUrl.endsWith("/") ? r2PublicUrl.substring(0, r2PublicUrl.length() - 1) : r2PublicUrl;
         this.small = smallOverride.isBlank() ? base + "/favicon-ln.png" : smallOverride;
-        this.cover = coverOverride.isBlank() ? base + "/default-cover.webp" : coverOverride;
         this.big = bigOverride.isBlank() ? base + "/logo-ln.png" : bigOverride;
     }
 
@@ -36,8 +33,4 @@ public class SiteAssetsAdvice {
         return big;
     }
 
-    @ModelAttribute("siteDefaultCover")
-    public String siteDefaultCover() {
-        return cover;
-    }
 }

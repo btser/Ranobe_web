@@ -117,8 +117,8 @@
         <div class="card">
                     <div class="form-group">
             <label>Ảnh bìa:</label>
-            <img th:src="${#strings.isEmpty(product.coverImage)} ? ${siteDefaultCover} : ${product.coverImage}"
-                    th:data-fallback="${siteDefaultCover}" onerror="this.onerror=null;this.src=this.dataset.fallback"
+            <img th:if="${!#strings.isEmpty(product.coverImage)}" th:src="${product.coverImage}"
+                    onerror="this.onerror=null;this.style.display='none'"
                     alt="Ảnh bìa" style="width:140px; height:200px; object-fit:cover; border-radius:6px; display:block; margin-bottom:10px;"/>
 
             <form th:action="@{'/truyen/' + ${product.productId} + '/cover'}"
@@ -130,7 +130,7 @@
             <form th:if="${!#strings.isEmpty(product.coverImage)}"
                     th:action="@{'/truyen/' + ${product.productId} + '/cover/remove'}"
                     method="post" style="margin-top:8px;"
-                    onsubmit="return confirm('Gỡ ảnh bìa? Truyện sẽ dùng ảnh mặc định.');">
+                    onsubmit="return confirm('Gỡ ảnh bìa?');">
                 <button type="submit" class="icon-btn danger">🗑 Gỡ ảnh bìa</button>
             </form>
         </div>
