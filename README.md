@@ -36,4 +36,5 @@ The application is deployed on Render using Docker
 - **Cloudflare R2:** stores images
 
 The Render is free so you maybe have to wait a few minutes:) enjoy
+
 Link 👉 https://ranobe-web.onrender.com/
