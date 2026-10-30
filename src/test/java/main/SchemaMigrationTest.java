@@ -12,6 +12,7 @@ import java.nio.file.*;
 import java.sql.*;
 import java.util.*;
 import main.service.EngagementService;
+import main.service.DiscussionService;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.SingleConnectionDataSource;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
@@ -22,6 +23,125 @@ import static org.junit.jupiter.api.Assertions.*;
 /** Chỉ tạo/xóa lược đồ tạm riêng, không chạy ứng dụng và không đụng bảng public. */
 @EnabledIfEnvironmentVariable(named="RUN_DATABASE_TESTS", matches="true")
 class SchemaMigrationTest {
+    @Test
+    void chapterRenameAcceptsDatabaseAlreadyUsingContent() throws Exception {
+        isolated((connection,schema,p) -> {
+            ScriptUtils.executeSqlScript(connection,new EncodedResource(
+                    new ClassPathResource("db/migration/V1__create_existing_schema.sql"),"UTF-8"));
+            var sql=connection.createStatement();
+            sql.execute("ALTER TABLE chapters RENAME COLUMN context TO content");
+            sql.execute("INSERT INTO products(product_id,title) VALUES (5,'Truyện')");
+            sql.execute("INSERT INTO volumes(volume_id,product_id) VALUES (6,5)");
+            sql.execute("INSERT INTO chapters(chapter_id,volume_id,content) VALUES (7,6,'Tiếng Việt giữ nguyên')");
+            assertEquals(5,flyway(p,schema).migrate().migrationsExecuted);
+            assertEquals("Tiếng Việt giữ nguyên",new JdbcTemplate(new SingleConnectionDataSource(connection,true))
+                    .queryForObject("SELECT content FROM chapters WHERE chapter_id=7",String.class));
+        });
+    }
+
+    @Test
+    void chapterRenameStopsWhenBothColumnsExistWithoutDiscardingData() throws Exception {
+        isolated((connection,schema,p) -> {
+            ScriptUtils.executeSqlScript(connection,new EncodedResource(
+                    new ClassPathResource("db/migration/V1__create_existing_schema.sql"),"UTF-8"));
+            var sql=connection.createStatement();
+            sql.execute("ALTER TABLE chapters ADD COLUMN content TEXT");
+            sql.execute("INSERT INTO products(product_id,title) VALUES (5,'Truyện')");
+            sql.execute("INSERT INTO volumes(volume_id,product_id) VALUES (6,5)");
+            sql.execute("INSERT INTO chapters(chapter_id,volume_id,context,content) VALUES (7,6,'Bản cũ','Bản mới')");
+            assertThrows(org.flywaydb.core.api.FlywayException.class,()->flyway(p,schema).migrate());
+            try(var row=sql.executeQuery("SELECT context,content FROM chapters WHERE chapter_id=7")) {
+                assertTrue(row.next());assertEquals("Bản cũ",row.getString(1));assertEquals("Bản mới",row.getString(2));
+            }
+        });
+    }
+    @Test
+    void discussionPermissionsModerationAndActivityRemainConsistent() throws Exception {
+        isolated((connection,schema,p) -> {
+            flyway(p,schema).migrate();
+            var source=new SingleConnectionDataSource(connection,true);
+            var jdbc=new JdbcTemplate(source);
+            var service=new DiscussionService(jdbc);
+            var tx=new TransactionTemplate(new DataSourceTransactionManager(source));
+            for(int id=1;id<=3;id++) {
+                jdbc.update("INSERT INTO users(user_id,user_name) VALUES (?,?)",id,"User "+id);
+                jdbc.update("INSERT INTO accounts(user_id,username,email,password,role) VALUES (?,?,?,?,?)",id,"user"+id,"user"+id+"@example.test","test-hash",id==3?"MOD":"USER");
+            }
+            assertThrows(org.springframework.web.server.ResponseStatusException.class,
+                    () -> tx.execute(s->service.create(1,"Fake notice","body",true)));
+            long topicId=tx.execute(s->service.create(1,"Chủ đề Việt","<img src=x onerror=alert(1)>",false));
+            var topic=service.topic(topicId,false);
+            assertEquals(1,topic.lastUserId());assertEquals(0,topic.commentCount());
+            assertEquals("<img src=x onerror=alert(1)>",topic.content());
+            assertThrows(org.springframework.web.server.ResponseStatusException.class,
+                    () -> tx.execute(s->service.create(1,"Too soon","body",false)));
+            long replyId=tx.execute(s->service.postReply(topicId,2,"Trả lời"));
+            assertEquals(2,service.topic(topicId,false).lastUserId());
+            assertEquals(1,service.topic(topicId,false).commentCount());
+            assertThrows(org.springframework.web.server.ResponseStatusException.class,
+                    () -> tx.execute(s->service.postReply(topicId,2,"Too soon")));
+            Instant activity=service.topic(topicId,false).activityAt();
+            tx.executeWithoutResult(s->service.editTopic(topicId,1,"Tên mới","Nội dung sửa",false));
+            tx.executeWithoutResult(s->service.editReply(topicId,replyId,2,"Bình luận sửa"));
+            assertEquals(activity,service.topic(topicId,false).activityAt());
+            assertThrows(org.springframework.web.server.ResponseStatusException.class,
+                    () -> tx.executeWithoutResult(s->service.editTopic(topicId,3,"Mod sửa người khác","body",false)));
+            assertThrows(org.springframework.web.server.ResponseStatusException.class,
+                    () -> tx.executeWithoutResult(s->service.editReply(topicId,replyId,1,"Sửa người khác")));
+            assertThrows(org.springframework.web.server.ResponseStatusException.class,
+                    () -> tx.executeWithoutResult(s->service.editTopic(topicId,1,"Tên","body",true)));
+            assertThrows(org.springframework.web.server.ResponseStatusException.class,
+                    () -> tx.executeWithoutResult(s->service.moderate(topicId,1,"hide",null)));
+            tx.executeWithoutResult(s->service.moderate(topicId,3,"hide-comment",replyId));
+            assertEquals(0,service.topic(topicId,false).commentCount());
+            assertEquals(1,service.topic(topicId,false).lastUserId());
+            assertEquals(0,service.replies(topicId,false,0).getTotalElements());
+            assertEquals(1,service.replies(topicId,true,0).getTotalElements());
+            tx.executeWithoutResult(s->service.moderate(topicId,3,"restore-comment",replyId));
+            tx.executeWithoutResult(s->service.moderate(topicId,3,"lock",null));
+            assertThrows(org.springframework.web.server.ResponseStatusException.class,
+                    () -> tx.execute(s->service.postReply(topicId,1,"Locked")));
+            tx.executeWithoutResult(s->service.moderate(topicId,3,"unlock",null));
+            tx.executeWithoutResult(s->service.moderate(topicId,3,"hide",null));
+            assertThrows(org.springframework.web.server.ResponseStatusException.class,()->service.topic(topicId,false));
+            assertEquals(0,service.topics("","all","hidden",false,0).getTotalElements());
+            assertEquals(1,service.topics("","all","hidden",true,0).getTotalElements());
+            tx.executeWithoutResult(s->service.moderate(topicId,3,"restore",null));
+            long notice=tx.execute(s->service.create(3,"Thông báo","Thông báo quản trị",true));
+            assertTrue(service.topic(notice,false).notification());
+            assertEquals(1,service.topics("","notification","active",false,0).getTotalElements());
+            assertEquals(0,service.topics("%","all","active",false,0).getTotalElements());
+            jdbc.update("UPDATE accounts SET is_deleted=TRUE WHERE user_id=2");
+            assertThrows(org.springframework.web.server.ResponseStatusException.class,
+                    () -> tx.executeWithoutResult(s->service.editReply(topicId,replyId,2,"Banned")));
+            assertThrows(org.springframework.web.server.ResponseStatusException.class,
+                    () -> tx.execute(s->service.postReply(topicId,2,"Banned")));
+        });
+    }
+
+    @Test
+    void discussionReplyCannotBeModifiedThroughAnotherTopic() throws Exception {
+        isolated((connection,schema,p) -> {
+            flyway(p,schema).migrate();
+            var source=new SingleConnectionDataSource(connection,true);var jdbc=new JdbcTemplate(source);
+            var service=new DiscussionService(jdbc);var tx=new TransactionTemplate(new DataSourceTransactionManager(source));
+            jdbc.update("INSERT INTO users(user_id,user_name) VALUES (1,'A'),(2,'B')");
+            jdbc.update("INSERT INTO accounts(user_id,username,email,password,role) VALUES (1,'a','a@t.test','hash','USER'),(2,'b','b@t.test','hash','ADMIN')");
+            long first=tx.execute(s->service.create(1,"First","body",false));
+            long second=tx.execute(s->service.create(2,"Second","body",false));
+            long comment=tx.execute(s->service.postReply(first,1,"Reply"));
+            assertThrows(org.springframework.web.server.ResponseStatusException.class,
+                    ()->tx.executeWithoutResult(s->service.editReply(second,comment,1,"Wrong topic")));
+            assertThrows(org.springframework.web.server.ResponseStatusException.class,
+                    ()->tx.executeWithoutResult(s->service.moderate(second,2,"hide-comment",comment)));
+            assertFalse(service.reply(first,comment,false).deleted());
+            for(int i=0;i<25;i++) jdbc.update("INSERT INTO discuss(user_id,title,content) VALUES (1,?,'body')","Extra "+i);
+            assertEquals(24,service.topics("","all","active",false,0).getContent().size());
+            assertEquals(3,service.topics("","all","active",false,1).getContent().size());
+            assertThrows(org.springframework.web.server.ResponseStatusException.class,
+                    ()->tx.execute(s->service.postReply(second,1," ")));
+        });
+    }
     interface Check { void run(Connection connection, String schema, Properties config) throws Exception; }
     private void isolated(Check check) throws Exception {
         Properties config = new Properties();
@@ -49,7 +169,7 @@ class SchemaMigrationTest {
     void emptyDatabaseMigratesAndMatchesAllEntities() throws Exception {
         isolated((connection, schema, p) -> {
             Flyway flyway = flyway(p, schema);
-            assertEquals(3, flyway.migrate().migrationsExecuted);
+            assertEquals(5, flyway.migrate().migrationsExecuted);
             assertEquals(0, flyway.migrate().migrationsExecuted);
             Configuration hibernate = new Configuration();
             hibernate.setProperty("hibernate.connection.url", p.getProperty("spring.datasource.url"));
@@ -75,12 +195,19 @@ class SchemaMigrationTest {
             sql.execute("INSERT INTO products(product_id,title,is_deleted,status) VALUES (5,'Truyện cũ',NULL,NULL)");
             sql.execute("INSERT INTO volumes(volume_id,product_id,sort_order,is_deleted) VALUES (6,5,NULL,NULL)");
             sql.execute("INSERT INTO chapters(chapter_id,volume_id,context,sort_order,is_deleted) VALUES (7,6,'Chữ tiếng Việt còn nguyên',NULL,NULL)");
-            assertEquals(3, flyway(p, schema).migrate().migrationsExecuted);
-            try(var result = sql.executeQuery("SELECT context,sort_order,is_deleted,is_completed FROM chapters WHERE chapter_id=7")) {
+            assertEquals(5, flyway(p, schema).migrate().migrationsExecuted);
+            try(var result = sql.executeQuery("SELECT content,sort_order,is_deleted,is_completed FROM chapters WHERE chapter_id=7")) {
                 assertTrue(result.next());
                 assertEquals("Chữ tiếng Việt còn nguyên", result.getString(1));
                 assertEquals(0, result.getInt(2)); assertFalse(result.getBoolean(3)); assertTrue(result.getBoolean(4));
             }
+            var source=new SingleConnectionDataSource(connection,true);
+            var jdbc=new JdbcTemplate(source);
+            assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM information_schema.columns WHERE table_schema=? AND table_name='chapters' AND column_name='context'",Integer.class,schema));
+            jdbc.update("UPDATE chapters SET content=? WHERE chapter_id=7","<p>Tiếng Việt</p><img src=\"https://example.test/chapters/p1/kept.jpg\">");
+            var cleanup=new main.service.ImageCleanupStore(jdbc,new DataSourceTransactionManager(source));
+            assertTrue(cleanup.referenced("chapters/p1/kept.jpg"));
+            assertFalse(cleanup.referenced("chapters/p1/missing.jpg"));
             assertThrows(SQLException.class, () -> sql.execute("UPDATE chapters SET sort_order=NULL WHERE chapter_id=7"));
         });
     }

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${topic.title} + ' - Thảo luận'"></title><link rel="icon" th:href="${siteLogoSmall}">
+    <link rel="stylesheet" th:href="@{/css/catalog.css}"><link rel="stylesheet" th:href="@{/css/discussions.css}">
+</head><body><nav th:replace="~{index :: navigation}"></nav>
+<main class="container"><a class="discussion-back" th:href="@{/thao-luan}">← Thảo luận</a>
+    <div class="discussion-heading"><h1 th:text="${topic.title}"></h1></div>
+    <article class="discussion-panel" th:classappend="${topic.deleted} ? 'discussion-hidden'">
+        <div class="discussion-meta"><span class="topic-kind" th:classappend="${topic.notification} ? 'notice'" th:text="${topic.notification ? 'Thông báo' : 'Thảo luận'}"></span>
+            <a th:href="@{/users/{id}(id=${topic.userId})}" th:text="${topic.userName}"></a>
+            <span th:text="'Đăng: ' + ${#temporals.format(topic.createdAt,'dd/MM/yyyy HH:mm','Asia/Bangkok')}"></span>
+            <span th:if="${!topic.updatedAt.equals(topic.createdAt)}" th:text="'Sửa: ' + ${#temporals.format(topic.updatedAt,'dd/MM/yyyy HH:mm','Asia/Bangkok')}"></span>
+            <span th:text="${topic.views} + ' lượt xem'"></span><span th:text="${topic.commentCount} + ' bình luận'"></span>
+            <span th:if="${topic.deleted}" class="discussion-badge">Đã ẩn</span><span th:if="${topic.locked}" class="discussion-badge">Đã khóa trả lời</span>
+        </div>
+        <div class="discussion-content" th:text="${topic.content}"></div>
+        <div class="discussion-actions">
+            <a th:if="${user != null and user.userId == topic.userId and !topic.deleted}" th:href="@{/thao-luan/{id}/sua(id=${topic.id})}">Sửa chủ đề</a>
+            <th:block th:if="${isStaff}">
+                <form method="post" th:action="@{/thao-luan/{id}/quan-ly(id=${topic.id})}"><input type="hidden" name="discussionToken" th:value="${discussionToken}"><input type="hidden" name="action" th:value="${topic.deleted ? 'restore' : 'hide'}"><button th:text="${topic.deleted ? 'Khôi phục chủ đề' : 'Ẩn chủ đề'}"></button></form>
+                <form method="post" th:action="@{/thao-luan/{id}/quan-ly(id=${topic.id})}"><input type="hidden" name="discussionToken" th:value="${discussionToken}"><input type="hidden" name="action" th:value="${topic.locked ? 'unlock' : 'lock'}"><button th:text="${topic.locked ? 'Mở khóa trả lời' : 'Khóa trả lời'}"></button></form>
+            </th:block>
+        </div>
+    </article>
+    <h2 id="replies">Bình luận</h2>
+    <p class="discussion-error" role="alert" th:if="${discussionError != null}" th:text="${discussionError}"></p>
+    <article class="discussion-panel" th:each="reply : ${replies.content}" th:id="'comment-' + ${reply.id}" th:classappend="${reply.deleted} ? 'discussion-hidden'">
+        <div class="discussion-meta"><a th:href="@{/users/{id}(id=${reply.userId})}" th:text="${reply.userName}"></a>
+            <span th:text="${#temporals.format(reply.createdAt,'dd/MM/yyyy HH:mm','Asia/Bangkok')}"></span>
+            <span th:if="${!reply.updatedAt.equals(reply.createdAt)}" th:text="'Sửa: ' + ${#temporals.format(reply.updatedAt,'dd/MM/yyyy HH:mm','Asia/Bangkok')}"></span>
+            <span th:if="${reply.deleted}" class="discussion-badge">Đã ẩn</span>
+        </div>
+        <div class="discussion-content" th:text="${reply.content}"></div>
+        <div class="discussion-actions"><a th:if="${user != null and user.userId == reply.userId and !topic.deleted and !reply.deleted}" th:href="@{/thao-luan/{id}/binh-luan/{commentId}/sua(id=${topic.id},commentId=${reply.id})}">Sửa bình luận</a>
+            <form th:if="${isStaff}" method="post" th:action="@{/thao-luan/{id}/quan-ly(id=${topic.id})}"><input type="hidden" name="discussionToken" th:value="${discussionToken}"><input type="hidden" name="commentId" th:value="${reply.id}"><input type="hidden" name="action" th:value="${reply.deleted ? 'restore-comment' : 'hide-comment'}"><button th:text="${reply.deleted ? 'Khôi phục bình luận' : 'Ẩn bình luận'}"></button></form>
+        </div>
+    </article>
+    <p class="discussion-empty" th:if="${replies.empty}">Chưa có bình luận.</p>
+    <nav class="catalog-pages" th:if="${replies.totalPages > 1}" aria-label="Phân trang bình luận thảo luận">
+        <a th:if="${replies.hasPrevious()}" th:href="@{/thao-luan/{id}(id=${topic.id},page=${replies.number - 1})} + '#replies'">←</a><span th:text="'Trang ' + ${replies.number + 1} + ' / ' + ${replies.totalPages}"></span>
+        <a th:if="${replies.hasNext()}" th:href="@{/thao-luan/{id}(id=${topic.id},page=${replies.number + 1})} + '#replies'">→</a>
+    </nav>
+    <p th:if="${topic.locked or topic.deleted}">Chủ đề hiện không nhận trả lời.</p>
+    <th:block th:unless="${topic.locked or topic.deleted}">
+        <p th:if="${user == null}"><a class="discussion-back" th:href="@{/login}">Đăng nhập để trả lời</a></p>
+        <form id="reply-form" class="discussion-form" th:if="${user != null}" method="post" th:action="@{/thao-luan/{id}/tra-loi(id=${topic.id})}">
+            <input type="hidden" name="discussionToken" th:value="${discussionToken}"><label for="reply-content">Trả lời bằng văn bản</label><textarea id="reply-content" name="content" maxlength="5000" required th:text="${replyContent}"></textarea><div class="discussion-actions"><button class="discussion-button" type="submit">Gửi trả lời</button></div>
+        </form>
+    </th:block>
+</main></body></html>

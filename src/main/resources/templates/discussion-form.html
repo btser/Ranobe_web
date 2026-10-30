@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${heading} + ' - Ranobe Kingdom'"></title><link rel="icon" th:href="${siteLogoSmall}">
+    <link rel="stylesheet" th:href="@{/css/catalog.css}"><link rel="stylesheet" th:href="@{/css/discussions.css}">
+</head><body><nav th:replace="~{index :: navigation}"></nav>
+<main class="container"><a class="discussion-back" th:href="${topicId == null} ? @{/thao-luan} : @{/thao-luan/{id}(id=${topicId})}">← Quay lại</a>
+    <h1 th:text="${heading}"></h1>
+    <form class="discussion-form" method="post" th:action="@{${formAction}}">
+        <input type="hidden" name="discussionToken" th:value="${discussionToken}">
+        <p class="discussion-error" role="alert" th:if="${formError != null}" th:text="${formError}"></p>
+        <th:block th:unless="${replyEdit}">
+            <label for="topic-title">Tiêu đề</label><input type="text" id="topic-title" name="title" th:value="${formTitle}" maxlength="200" required>
+            <label th:if="${isStaff}"><input type="checkbox" name="notification" value="true" th:checked="${formNotification}"> Đăng dưới dạng thông báo</label>
+            <input th:unless="${isStaff}" type="hidden" name="notification" th:value="${formNotification}">
+        </th:block>
+        <label for="discussion-content">Nội dung</label><textarea id="discussion-content" name="content" th:text="${formContent}" th:maxlength="${replyEdit ? 5000 : 20000}" required></textarea>
+        <p>Chỉ hỗ trợ văn bản, chưa hỗ trợ chèn ảnh.</p>
+        <button type="submit" class="discussion-button">Lưu</button>
+    </form>
+</main></body></html>

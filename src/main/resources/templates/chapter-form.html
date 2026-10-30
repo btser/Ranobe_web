@@ -98,7 +98,7 @@
             <div class="ce-body" id="ceBody" contenteditable="true" spellcheck="false" data-ph="Nhập nội dung chương..." th:utext="${html}"></div>
             <div class="ce-foot"><span id="ceWords">0 từ</span><span id="ceChars">0 ký tự</span></div>
         </div>
-        <input type="hidden" name="context" id="ceContext">
+        <input type="hidden" name="content" id="ceContent">
     </div>
 
     <div class="ce-actions">
@@ -231,7 +231,7 @@
         if (!(body.innerText || '').trim() && !body.querySelector('img')) {
             ev.preventDefault(); msg.textContent = 'Nội dung chương đang trống.'; body.focus(); return;
         }
-        document.getElementById('ceContext').value = html;
+        document.getElementById('ceContent').value = html;
     });
 })();
 </script>

@@ -117,8 +117,8 @@
         <div class="card">
                     <div class="form-group">
             <label>Ảnh bìa:</label>
-            <img th:if="${!#strings.isEmpty(product.coverImage)}" th:src="${product.coverImage}"
-                    onerror="this.onerror=null;this.style.display='none'"
+            <img th:src="${#strings.isEmpty(product.coverImage) ? siteDefaultCover : product.coverImage}"
+                    th:data-fallback="${siteDefaultCover}" onerror="this.onerror=null;this.src=this.dataset.fallback"
                     alt="Ảnh bìa" style="width:140px; height:200px; object-fit:cover; border-radius:6px; display:block; margin-bottom:10px;"/>
 
             <form th:action="@{'/truyen/' + ${product.productId} + '/cover'}"
@@ -196,8 +196,8 @@
                 <div class="volume-header">
                     <span class="drag-handle" title="Kéo để sắp xếp">⠿</span>
 
-                    <img th:if="${vol.coverImage != null}" th:src="${vol.coverImage}" alt="Bìa tập" class="volume-cover-thumb"/>
-                    <div th:if="${vol.coverImage == null}" class="volume-cover-thumb volume-cover-placeholder">🖼</div>
+                    <img th:src="${#strings.isEmpty(vol.coverImage) ? siteDefaultCover : vol.coverImage}"
+                         th:data-fallback="${siteDefaultCover}" onerror="this.onerror=null;this.src=this.dataset.fallback" alt="Bìa tập" class="volume-cover-thumb"/>
 
                     <div class="volume-info">
                         <div class="v-title"

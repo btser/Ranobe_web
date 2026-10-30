@@ -14,6 +14,7 @@ public class SiteAssetsAdvice {
 
     private final String small;
     private final String big;
+    private final String cover;
 
     public SiteAssetsAdvice(@Value("${r2.public-url}") String r2PublicUrl,
                             @Value("${site.logo-small-url:}") String smallOverride,
@@ -21,6 +22,7 @@ public class SiteAssetsAdvice {
         String base = r2PublicUrl.endsWith("/") ? r2PublicUrl.substring(0, r2PublicUrl.length() - 1) : r2PublicUrl;
         this.small = smallOverride.isBlank() ? base + "/favicon-ln.png" : smallOverride;
         this.big = bigOverride.isBlank() ? base + "/logo-ln.png" : bigOverride;
+        this.cover = base + "/default-cover.webp";
     }
 
     @ModelAttribute("siteLogoSmall")
@@ -31,6 +33,12 @@ public class SiteAssetsAdvice {
     @ModelAttribute("siteLogoBig")
     public String siteLogoBig() {
         return big;
+    }
+
+    /** Bìa mặc định xanh–tím dạng dọc trên Cloudflare, tách biệt với logo. */
+    @ModelAttribute("siteDefaultCover")
+    public String siteDefaultCover() {
+        return cover;
     }
 
 }

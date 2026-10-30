@@ -14,6 +14,7 @@
         <a href="/" class="logo"><img th:src="${siteLogoSmall}" alt="LN"> Ranobe Kingdom</a>
         
         <div class="nav-links">
+            <a th:href="@{/thao-luan}" class="advanced-link">Thảo luận</a>
             <a href="/xep-hang" class="advanced-link">Xếp hạng</a>
             <!-- Nút hiển thị khi CHƯA đăng nhập -->
             <th:block th:if="${user == null}">
@@ -35,15 +36,14 @@
     <!-- CONTENT MAIN -->
     <div class="container">
         <section class="recommendations" th:if="${recommendedProducts != null and !#lists.isEmpty(recommendedProducts)}" aria-labelledby="recommendationHeading">
-            <h2 id="recommendationHeading">Đề xuất trong 24 giờ</h2>
+            <h2 id="recommendationHeading">Đề xuất</h2>
             <div class="recommendation-grid">
                 <a class="recommendation-card" th:each="entry : ${recommendedProducts}" th:href="@{${entry.path}}">
                     <div class="recommendation-cover">
-                        <img th:if="${!#strings.isEmpty(entry.coverImage)}" th:src="${entry.coverImage}"
-                             onerror="this.onerror=null;this.style.visibility='hidden'" alt="Bìa truyện" loading="lazy">
+                        <img th:src="${#strings.isEmpty(entry.coverImage) ? siteDefaultCover : entry.coverImage}"
+                             th:data-fallback="${siteDefaultCover}" onerror="this.onerror=null;this.src=this.dataset.fallback" alt="Bìa truyện" loading="lazy">
                     </div>
                     <b th:text="${entry.title}">Tên truyện</b>
-                    <small th:text="${entry.score} + ' điểm trong 24 giờ'"></small>
                 </a>
             </div>
         </section>
@@ -70,8 +70,8 @@
                th:href="@{${product.path}}" class="novel-card">
 
                 <div class="cover">
-                    <img th:if="${!#strings.isEmpty(product.coverImage)}" th:src="${product.coverImage}"
-                         onerror="this.onerror=null;this.style.visibility='hidden'"
+                    <img th:src="${#strings.isEmpty(product.coverImage) ? siteDefaultCover : product.coverImage}"
+                         th:data-fallback="${siteDefaultCover}" onerror="this.onerror=null;this.src=this.dataset.fallback"
                          loading="lazy" alt="Ảnh bìa"/>
 
                     <span class="badge-hidden" th:if="${product.status != null and product.status.name() != 'PUBLIC'}"

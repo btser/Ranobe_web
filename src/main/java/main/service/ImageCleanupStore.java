@@ -84,7 +84,7 @@ public class ImageCleanupStore {
                 OR EXISTS(SELECT 1 FROM volumes WHERE POSITION(? IN COALESCE(cover_image,''))>0 OR POSITION(? IN COALESCE(summary,''))>0)
                 OR EXISTS(SELECT 1 FROM users WHERE POSITION(? IN COALESCE(avatar_url,''))>0 OR POSITION(? IN COALESCE(cover_url,''))>0
                     OR POSITION(? IN COALESCE(introduce,''))>0 OR POSITION(? IN COALESCE(hobby,''))>0)
-                OR EXISTS(SELECT 1 FROM chapters WHERE POSITION(? IN COALESCE(context,''))>0)
+                OR EXISTS(SELECT 1 FROM chapters WHERE POSITION(? IN COALESCE(content,''))>0)
                 OR EXISTS(SELECT 1 FROM chapter_images WHERE POSITION(? IN COALESCE(image_url,''))>0)
                 """, Boolean.class, key, key, key, key, key, key, key, key, key, key));
     }

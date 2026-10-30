@@ -35,11 +35,21 @@ let browser;
 
     for (const width of [320, 390, 1280]) {
         await page.setViewportSize({ width, height: 844 });
-        for (const name of ['index', 'search', 'chapter-detail', 'chapter-edit', 'product-detail', 'ranking']) {
+        for (const name of ['index', 'search', 'chapter-detail', 'chapter-edit', 'product-detail', 'ranking', 'discussions', 'discussion-detail', 'discussion-form', 'discussion-detail-staff', 'discussion-form-staff']) {
             await page.goto(base + '/' + name + '.html');
             assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), name + ' overflows at ' + width);
         }
     }
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(base + '/discussion-detail-staff.html');
+    assert.equal(await page.locator('.discussion-content img, .discussion-content script').count(), 0);
+    assert.equal(await page.locator('input[type=file]').count(), 0);
+    assert.equal(await page.getByRole('button', { name: 'Ẩn chủ đề', exact: true }).count(), 1);
+    await page.screenshot({ path: path.join(output, 'discussion-mobile.png'), fullPage: true });
+    await page.goto(base + '/discussions.html');
+    await page.screenshot({ path: path.join(output, 'discussions-mobile.png'), fullPage: true });
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.screenshot({ path: path.join(output, 'discussions-desktop.png'), fullPage: true });
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(base + '/index.html');
     await page.screenshot({ path: path.join(output, 'home-mobile.png'), fullPage: true });
@@ -136,6 +146,9 @@ let browser;
         if (route.request().method() !== 'POST') return route.continue();
         const revision = new URLSearchParams(route.request().postData()).get('draftRevision');
         assert(revision, 'Submit has no draft revision');
+        const submitted = new URLSearchParams(route.request().postData());
+        assert(submitted.get('content')?.includes('chưa công bố'), 'Chapter content missing from renamed form field');
+        assert.equal(submitted.has('context'), false, 'Legacy chapter field still submitted');
         await route.fulfill({ contentType: 'text/html', body: '<html><body><div id="draftSaved" data-draft-key="user:7:chapter:1" data-draft-revision="' + revision + '"></div><script src="/js/editor-drafts.js"></script></body></html>' });
     });
     await page.locator('#ceSubmit').click();

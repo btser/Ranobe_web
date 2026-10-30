@@ -445,7 +445,7 @@ public class PdfImportController {
         Chapter ch = new Chapter();
         ch.setVolume(volume);
         ch.setTitle(title);
-        ch.setContext(text);
+        ch.setContent(text);
         ch.setDeleted(false);
         ch.setSortOrder(order);
         return chapterRepository.save(ch);

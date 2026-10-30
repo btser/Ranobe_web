@@ -66,6 +66,11 @@ class UiTemplateTest {
         String testLogo="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==";
         values.put("siteLogoSmall", testLogo);
         values.put("siteLogoBig", testLogo);
+        String fallbackCover="https://images.example.test/default-cover.webp";
+        var assets = new main.config.SiteAssetsAdvice("https://images.example.test/", "", "https://images.example.test/custom-logo.png");
+        assertEquals(fallbackCover, assets.siteDefaultCover());
+        assertEquals("https://images.example.test/custom-logo.png", assets.siteLogoBig());
+        values.put("siteDefaultCover", fallbackCover);
         values.put("product", product);
         values.put("volumes", volumes);
         values.put("chapter", chapters.get(0));
@@ -117,9 +122,21 @@ class UiTemplateTest {
         values.put("profileAccount", administrator);
         values.put("canManageAccount", false);
         values.put("statuses", List.of(Status.values()));
+        var now = java.time.Instant.parse("2026-10-30T08:00:00Z");
+        var topic = new main.service.DiscussionService.Topic(1,7,"Người đăng","Một chủ đề thảo luận",
+                "<script>không chạy</script>\nNội dung văn bản.",false,12,now,now,false,false,1,now,7,"Người đăng");
+        values.put("topic",topic);
+        values.put("topics",new PageImpl<>(List.of(topic),PageRequest.of(0,24),30));
+        values.put("replies",new PageImpl<>(List.of(new main.service.DiscussionService.Reply(1,1,7,
+                "Người đăng","<img src=x onerror=alert(1)>",now,now,false)),PageRequest.of(0,20),21));
+        values.put("type","all");values.put("state","active");
+        values.put("discussionToken","test-discussion-token");
+        values.put("topicId",null);values.put("heading","Tạo chủ đề");
+        values.put("formAction","/thao-luan/tao");values.put("formTitle","");values.put("formContent","");
+        values.put("formNotification",false);values.put("replyEdit",false);
         Path output = Path.of("target", "ui-preview");
         Files.createDirectories(output);
-        for (String template : List.of("chapter-detail", "product-detail", "product-edit", "profile", "chapter-edit", "index", "search", "admin", "ranking")) {
+        for (String template : List.of("chapter-detail", "product-detail", "product-edit", "profile", "chapter-edit", "index", "search", "admin", "ranking", "discussions", "discussion-detail", "discussion-form")) {
             values.put("advancedSearch", "search".equals(template));
             MockHttpServletRequest request = new MockHttpServletRequest(servlet);
             request.setRequestURI("/");
@@ -128,8 +145,10 @@ class UiTemplateTest {
             String html = engine.process(template, context);
             assertTrue(html.contains("<html"), template);
             assertFalse(html.contains("th:action"), template);
-            assertFalse(html.contains("default-cover.webp"), template);
-            assertFalse(html.contains("data-fallback"), template);
+            assertFalse(html.contains("/images/default-cover.webp"), template);
+            if (List.of("index", "product-detail", "product-edit", "profile").contains(template)) {
+                assertTrue(html.contains("src=\"" + fallbackCover + "\""), template);
+            }
             if (template.equals("ranking")) {
                 assertTrue(html.contains("115 điểm"));
                 assertTrue(html.contains(product.getTitle()));
@@ -137,8 +156,28 @@ class UiTemplateTest {
             if (template.equals("product-detail")) {
                 assertTrue(html.contains("&lt;script&gt;không chạy&lt;/script&gt;"));
             }
+            if (template.equals("discussion-detail")) {
+                assertTrue(html.contains("&lt;script&gt;không chạy&lt;/script&gt;"));
+                assertTrue(html.contains("&lt;img src=x onerror=alert(1)&gt;"));
+                assertFalse(html.contains("Ẩn chủ đề"));
+                assertFalse(html.contains("Gửi trả lời"));
+            }
             Files.writeString(output.resolve(template + ".html"), html);
         }
+        values.put("user",profileUser);values.put("isStaff",true);
+        for (String template : List.of("discussions","discussion-detail","discussion-form")) {
+            MockHttpServletRequest request = new MockHttpServletRequest(servlet);
+            request.setRequestURI("/");
+            var context = new WebContext(app.buildExchange(request,new MockHttpServletResponse()),Locale.forLanguageTag("vi"),values);
+            String html = engine.process(template,context);
+            if (template.equals("discussion-detail")) {
+                assertTrue(html.contains("Ẩn chủ đề"));assertTrue(html.contains("Sửa chủ đề"));
+                assertTrue(html.contains("Gửi trả lời"));assertTrue(html.contains("test-discussion-token"));
+            }
+            if (template.equals("discussion-form")) assertTrue(html.contains("Đăng dưới dạng thông báo"));
+            Files.writeString(output.resolve(template + "-staff.html"),html);
+        }
+        values.put("user",null);values.put("isStaff",false);
         product.setCoverImage("https://images.example.test/custom-cover.png");
         for (String template : List.of("index", "product-detail", "product-edit", "profile")) {
             MockHttpServletRequest request = new MockHttpServletRequest(servlet);
@@ -146,7 +185,7 @@ class UiTemplateTest {
             var context = new WebContext(app.buildExchange(request, new MockHttpServletResponse()), Locale.forLanguageTag("vi"), values);
             String html = engine.process(template, context);
             assertTrue(html.contains("https://images.example.test/custom-cover.png"), template);
-            assertFalse(html.contains("data-fallback"), template);
+            assertTrue(html.contains("data-fallback=\"" + fallbackCover + "\""), template);
         }
         values.put("volume", volume);
         values.put("token", "12345678-1234-1234-1234-123456789abc");

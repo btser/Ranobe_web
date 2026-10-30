@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Thảo luận - Ranobe Kingdom</title><link rel="icon" th:href="${siteLogoSmall}">
+    <link rel="stylesheet" th:href="@{/css/catalog.css}"><link rel="stylesheet" th:href="@{/css/discussions.css}">
+</head><body>
+<nav th:replace="~{index :: navigation}"></nav>
+<main class="container">
+    <div class="discussion-heading"><h1>Thảo luận</h1><a class="discussion-button" th:href="${user == null} ? @{/login} : @{/thao-luan/tao}">＋ Thêm chủ đề</a></div>
+    <form class="discussion-filters" method="get" th:action="@{/thao-luan}">
+        <label>Tìm tiêu đề<input type="search" name="q" maxlength="150" th:value="${q}" placeholder="Tên chủ đề"></label>
+        <label>Chuyên mục<select name="type"><option value="all" th:selected="${type == 'all'}">Tất cả</option><option value="discussion" th:selected="${type == 'discussion'}">Thảo luận</option><option value="notification" th:selected="${type == 'notification'}">Thông báo</option></select></label>
+        <label th:if="${isStaff}">Hiển thị<select name="state"><option value="active" th:selected="${state == 'active'}">Đang hiện</option><option value="hidden" th:selected="${state == 'hidden'}">Đã ẩn</option><option value="all" th:selected="${state == 'all'}">Tất cả</option></select></label>
+        <button class="discussion-button" type="submit">Lọc</button><a class="discussion-back" th:href="@{/thao-luan}">Đặt lại</a>
+    </form>
+    <div class="discussion-table-wrap"><table class="discussion-table">
+        <thead><tr><th>Chủ đề</th><th>Chuyên mục</th><th>Bình luận</th><th>Lượt xem</th><th>Gần nhất</th><th>Người đăng cuối</th></tr></thead>
+        <tbody><tr th:each="topic : ${topics.content}">
+            <td class="topic-name"><a th:href="@{/thao-luan/{id}(id=${topic.id})}" th:text="${topic.title}"></a> <span class="discussion-badge" th:if="${topic.locked}">Đã khóa trả lời</span> <span class="discussion-badge" th:if="${topic.deleted}">Đã ẩn</span></td>
+            <td><span class="topic-kind" th:classappend="${topic.notification} ? 'notice'" th:text="${topic.notification ? 'Thông báo' : 'Thảo luận'}"></span></td>
+            <td th:text="${topic.commentCount}"></td><td th:text="${topic.views}"></td>
+            <td th:text="${#temporals.format(topic.activityAt,'dd/MM/yyyy HH:mm','Asia/Bangkok')}"></td>
+            <td><a th:href="@{/users/{id}(id=${topic.lastUserId})}" th:text="${topic.lastUserName}"></a></td>
+        </tr></tbody>
+    </table><p class="discussion-empty" th:if="${topics.empty}">Chưa có chủ đề phù hợp.</p></div>
+    <nav class="catalog-pages" th:if="${topics.totalPages > 1}" aria-label="Phân trang chủ đề">
+        <a th:if="${topics.hasPrevious()}" th:href="@{/thao-luan(q=${q},type=${type},state=${state},page=${topics.number - 1})}">←</a>
+        <span th:text="'Trang ' + ${topics.number + 1} + ' / ' + ${topics.totalPages}"></span>
+        <a th:if="${topics.hasNext()}" th:href="@{/thao-luan(q=${q},type=${type},state=${state},page=${topics.number + 1})}">→</a>
+    </nav>
+</main></body></html>

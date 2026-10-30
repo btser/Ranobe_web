@@ -452,7 +452,7 @@ public class ProductController {
 
     @PostMapping("/{pid}/{pslug}/tap/{volumeId}/{vslug}/add-chapter")
     public String saveChapter(@PathVariable("volumeId") int volumeId, @RequestParam("title") String title,
-        @RequestParam("context") String context,
+        @RequestParam("content") String content,
         @RequestParam(value = "completed", defaultValue = "true") boolean completed,
         @RequestParam(value = "draftRevision", defaultValue = "") String draftRevision,
         HttpSession session, org.springframework.web.servlet.mvc.support.RedirectAttributes redirects) {
@@ -464,7 +464,7 @@ public class ProductController {
                 Chapter chapter = new Chapter();
                 chapter.setVolume(volume);
                 chapter.setTitle(title);
-                chapter.setContext(main.service.ChapterContent.sanitize(context));
+                chapter.setContent(main.service.ChapterContent.sanitize(content));
                 chapter.setCompleted(completed);
                 chapter.setDeleted(false);
 
@@ -521,7 +521,7 @@ public class ProductController {
                 extra.add(im.getImageUrl());
             }
             model.addAttribute("chapter", chapter);
-            model.addAttribute("editorHtml", main.service.ChapterContent.toEditorHtml(chapter.getContext(), extra));
+            model.addAttribute("editorHtml", main.service.ChapterContent.toEditorHtml(chapter.getContent(), extra));
             model.addAttribute("editorDraftKey", "user:" + currentUser.getUserId() + ":chapter:" + chapterId);
             return "chapter-edit";
     }
@@ -529,7 +529,7 @@ public class ProductController {
     @PostMapping("/{pid}/{pslug}/chuong/{chapterId}/{cslug}/edit")
     public String editChapterContent(@PathVariable("chapterId") int chapterId,
         @RequestParam("title") String title,
-        @RequestParam("context") String context,
+        @RequestParam("content") String content,
         @RequestParam(value = "completed", defaultValue = "true") boolean completed,
         @RequestParam(value = "draftRevision", defaultValue = "") String draftRevision,
         HttpSession session, org.springframework.web.servlet.mvc.support.RedirectAttributes redirects) {
@@ -545,7 +545,7 @@ public class ProductController {
             if (cleanTitle != null) {
                 chapter.setTitle(cleanTitle);
             }
-            chapter.setContext(main.service.ChapterContent.sanitize(context));
+            chapter.setContent(main.service.ChapterContent.sanitize(content));
             chapter.setCompleted(completed);
             // Ảnh gắn riêng cũ đã được đưa vào nội dung trong khung soạn thảo -> bỏ danh sách ảnh riêng
             chapter.getImages().clear();
@@ -752,9 +752,9 @@ public class ProductController {
         model.addAttribute("chapter", chapter);
         model.addAttribute("images", images);
         // Nội dung chia khối chữ/ảnh để ảnh nằm đúng vị trí giữa các đoạn văn
-        model.addAttribute("blocks", main.service.ChapterContent.parse(chapter.getContext()));
-        model.addAttribute("contentHtml", main.service.ChapterContent.htmlForReader(chapter.getContext()));
-        model.addAttribute("wordCount", main.service.ChapterContent.wordCount(chapter.getContext()));
+        model.addAttribute("blocks", main.service.ChapterContent.parse(chapter.getContent()));
+        model.addAttribute("contentHtml", main.service.ChapterContent.htmlForReader(chapter.getContent()));
+        model.addAttribute("wordCount", main.service.ChapterContent.wordCount(chapter.getContent()));
         model.addAttribute("readingNavigation", main.service.ReadingNavigation.build(product.getPath(),
                 volumeRepository.findByProductIdWithChapters(product.getProductId()), chapterId));
         return "chapter-detail";

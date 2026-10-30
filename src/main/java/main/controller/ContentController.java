@@ -40,7 +40,7 @@ public class ContentController {
     public record ProductInput(String title, String author, String artist,
                                Status status, CategoryRef category) {}
     public record VolumeInput(String title, ProductRef product) {}
-    public record ChapterInput(String title, String context, VolumeRef volume) {}
+    public record ChapterInput(String title, @com.fasterxml.jackson.annotation.JsonAlias("context") String content, VolumeRef volume) {}
     public record ProductView(int productId, String title, Status status, String path) {}
 
     @GetMapping("/products")
@@ -120,15 +120,15 @@ public class ContentController {
         Volume volume = volumes.findByIdWithProductUploader(input.volume().volumeId())
                 .orElseThrow(ContentController::notFound);
         if (!access.canEdit(viewer, volume.getProduct())) throw forbidden();
-        if (input.context() == null || input.context().isBlank()
-                || input.context().length() > 1_000_000) {
+        if (input.content() == null || input.content().isBlank()
+                || input.content().length() > 1_000_000) {
             throw badRequest("Noi dung can 1-1000000 ky tu.");
         }
         Chapter chapter = new Chapter();
         chapter.setVolume(volume);
         chapter.setTitle(requiredTitle(input.title()));
         // Noi dung gui len o dang ma danh dau trang; loc truoc khi luu.
-        chapter.setContext(ChapterContent.sanitize(input.context()));
+        chapter.setContent(ChapterContent.sanitize(input.content()));
         chapter.setSortOrder(chapters.findMaxSortOrderByVolumeId(volume.getVolumeId()) + 1);
         chapter.setDeleted(false);
         chapters.save(chapter);

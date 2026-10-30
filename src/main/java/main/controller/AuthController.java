@@ -29,7 +29,7 @@ public class AuthController {
                               HttpServletRequest request, Model model) {
         Optional<Account> found = auth.login(username, password);
         if (found.isEmpty()) {
-            model.addAttribute("error", "Ten dang nhap hoac mat khau khong dung.");
+            model.addAttribute("error", "Tên đăng nhập hoặc mật khẩu không đúng");
             model.addAttribute("formUsername", username);
             return "login";
         }

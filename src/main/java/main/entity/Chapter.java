@@ -21,7 +21,7 @@ public class Chapter {
     private Volume volume;
 
     @Column(columnDefinition = "TEXT")
-    private String context;
+    private String content;
     @com.fasterxml.jackson.annotation.JsonIgnore
     @OneToMany(mappedBy = "chapter", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ChapterImage> images = new ArrayList<>();
@@ -50,21 +50,21 @@ public class Chapter {
 
     public Chapter() {}
 
-    public Chapter(int chapterId, Volume volume, String context) {
+    public Chapter(int chapterId, Volume volume, String content) {
         this.chapterId = chapterId;
         this.volume = volume;
-        this.context = context;
+        this.content = content;
     }
     public String getTitle() { return this.title;}
     /** Đuôi tiêu đề dùng trong link. */
     public String getSlug() { return main.util.Slugs.slug(title, "chuong"); }
     public int getChapterId() { return chapterId; }
     public Volume getVolume() { return volume; }
-    public String getContext() { return context; }
+    public String getContent() { return content; }
 
     public void setVolume(Volume volume) { this.volume = volume; }
     public void setTitle(String title) { this.title = title;}
-    public void setContext(String context) { this.context = context; }
+    public void setContent(String content) { this.content = content; }
     public boolean isDeleted() { return isDeleted; }
     public void setDeleted(boolean deleted) { isDeleted = deleted; }
 }

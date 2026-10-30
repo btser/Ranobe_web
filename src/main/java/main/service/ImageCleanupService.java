@@ -29,7 +29,7 @@ public class ImageCleanupService {
 
     @Autowired
     public ImageCleanupService(R2StorageService storage, ImageCleanupStore store, Settings settings, SiteAssetsAdvice assets) {
-        this(storage, store, settings, Clock.systemUTC(), List.of(assets.siteLogoSmall(), assets.siteLogoBig()));
+        this(storage, store, settings, Clock.systemUTC(), List.of(assets.siteLogoSmall(), assets.siteLogoBig(), assets.siteDefaultCover()));
     }
 
     ImageCleanupService(R2StorageService storage, ImageCleanupStore store, Settings settings, Clock clock, List<String> protectedUrls) {
