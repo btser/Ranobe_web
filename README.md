@@ -35,4 +35,5 @@ The application is deployed on Render using Docker
 - **Neon:** hosts the PostgreSQL database
 - **Cloudflare R2:** stores images
 
-Because Render is free so you maybe have to wait a few minutes:) enjoy
+The Render is free so you maybe have to wait a few minutes:) enjoy
+Link 👉 https://ranobe-web.onrender.com/
