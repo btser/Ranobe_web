@@ -1,13 +1,20 @@
-# Only build inputs enter the Docker context.
-**
-!pom.xml
-!src/
-!src/main/
-!src/main/**
-# Local settings must never enter the deployed image.
-src/main/resources/application.properties
-src/main/resources/application-local.properties
+.git
+.github
+target
+.m2
+.mvn
+.vscode
+.idea
+Database
+uploads
+examples
+data
+TTS
 **/.env
 **/.env.*
 **/*.backup
 **/*.dump
+**/*.log
+**/*.sql
+src/main/resources/application.properties
+src/main/resources/application-local.properties
