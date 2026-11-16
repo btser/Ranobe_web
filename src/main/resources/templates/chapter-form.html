@@ -171,7 +171,8 @@
             msg.textContent = 'Đang tải ảnh ' + (i + 1) + '/' + list.length + '...';
             try {
                 const fd = new FormData(); fd.append('file', list[i]);
-                const res = await fetch(uploadUrl, { method: 'POST', body: fd });
+                const res = await fetch(uploadUrl, { method: 'POST', body: fd,
+                    headers: { 'X-CSRF-TOKEN': document.querySelector('input[name="_csrf"]').value } });
                 const data = await res.json();
                 if (data.success) { insertImage(data.url); ok++; } else { msg.textContent = 'Không tải được: ' + list[i].name; }
             } catch (e) { msg.textContent = 'Lỗi mạng khi tải ' + list[i].name; }

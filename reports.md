@@ -1360,3 +1360,82 @@ Các file này giữ nguyên tại data; không tự đoán tên/tác giả ho�
 - SEC-02 và SEC-03 chưa được đánh dấu hoàn tất.
 
 ---
+
+## Report SEC-02 — Bảo vệ yêu cầu ghi dữ liệu và khởi tạo quản trị
+
+**Date:** 2026-11-16  
+**Status:** Completed  
+**Branch:** main
+
+### 1. Task Overview — Tổng quan
+- Áp dụng chống giả mạo yêu cầu từ trang khác cho mọi phương thức ghi dữ liệu; hỗ trợ biểu mẫu, yêu cầu JavaScript và biểu mẫu nhiều phần có tệp.
+- Xử lý vấn đề phát hiện trong SEC-01: mật khẩu quản trị tạo sẵn và tự mở khóa/nâng quyền tài khoản tên `admin` mỗi lần khởi động.
+- Giữ cơ chế đăng nhập và phân quyền trong bộ điều khiển hiện có; không thay bằng một hệ đăng nhập khác.
+
+### 2. Implementation Summary — Nội dung triển khai
+- Thêm `spring-security-web` với phiên bản do Spring Boot quản lý; sử dụng trực tiếp các thành phần `CsrfFilter`, `HttpSessionCsrfTokenRepository` và `CsrfRequestDataValueProcessor`.
+- `RequestSecurityConfig`: đăng ký bộ xử lý biểu mẫu nhiều phần trước bộ lọc kiểm tra mã; đăng ký bộ xử lý giá trị biểu mẫu với tên chuẩn `requestDataValueProcessor` để Thymeleaf thêm trường `_csrf` vào biểu mẫu `th:action`.
+- JavaScript tải ảnh chương và sắp xếp tập/chương gửi mã trong tiêu đề `X-CSRF-TOKEN`; không đưa mã lên địa chỉ yêu cầu.
+- `AuthController`: xóa mã cũ sau đăng nhập thành công; đổi đăng xuất thành POST. Hai giao diện có liên kết đăng xuất được đổi thành biểu mẫu có bảo vệ.
+- Cấu hình triển khai thêm `server.servlet.session.cookie.same-site=lax`, giữ `secure=true` và `http-only=true` đã có.
+
+### 3. Methods and Algorithms — Phương pháp và thuật toán
+- **Mã kiểm tra theo phiên:** `HttpSessionCsrfTokenRepository` lưu mã mong đợi trong phiên máy chủ; bộ xử lý mặc định của `CsrfFilter` cung cấp mã đã che bằng dữ liệu ngẫu nhiên cho biểu mẫu. Yêu cầu ghi phải mang mã hợp lệ bằng trường `_csrf` hoặc tiêu đề `X-CSRF-TOKEN`.
+- GET, HEAD, OPTIONS, TRACE giữ quy tắc phương thức an toàn mặc định của Spring Security. POST, PUT, PATCH, DELETE không có mã hoặc có mã sai nhận 403 trước bộ điều khiển. Việc có mã hợp lệ không thay thế kiểm tra quyền hiện có.
+- **Thứ tự xử lý:** bộ lọc biểu mẫu nhiều phần ở `Ordered.HIGHEST_PRECEDENCE + 90`, bộ lọc kiểm tra mã ở `+100`, sau đó mới tới bộ điều khiển. Cách này cho phép đọc trường ẩn của biểu mẫu tải tệp gốc mà không đưa mã vào địa chỉ.
+- **Xử lý lỗi:** trả 403, nội dung tiếng Việt yêu cầu tải lại trang và `Cache-Control: no-store`. Khi đăng nhập thành công, đổi mã phiên rồi xóa mã kiểm tra cũ để các biểu mẫu trước đăng nhập không còn hợp lệ.
+- **Khởi tạo quản trị:** `DataInitializer.run()` chỉ tạo `admin` khi tài khoản chưa tồn tại và `bootstrap.admin-password` được cung cấp rõ ràng; mật khẩu phải dài 12–256 ký tự và được băm bằng `Passwords.hash()`. Không thay mật khẩu, quyền hoặc trạng thái khóa của tài khoản đã tồn tại. Tạo hồ sơ và tài khoản trong cùng giao dịch bằng `@Transactional`.
+- Bộ lọc xử lý mã có kích thước cố định nên chi phí kiểm tra O(1); dữ liệu biểu mẫu/tệp vẫn có chi phí theo kích thước đầu vào. Đoạn backfill quyền rỗng đã có trong `DataInitializer` duyệt O(A) tài khoản và vẫn được giữ nguyên.
+
+### 4. Design Decisions — Quyết định thiết kế
+- Dùng thành phần chuẩn của Spring Security thay vì tự tạo thuật toán mã xác thực. Chỉ thêm mô-đun web cần dùng, tránh đưa cơ chế đăng nhập tự động vào dự án đang quản lý phiên thủ công.
+- Mã bổ sung của thảo luận và tương tác đã có được giữ nguyên; mã toàn cục kiểm tra trước các cơ chế riêng này.
+- Đọc biểu mẫu nhiều phần trước kiểm tra mã là đánh đổi cần thiết để giữ biểu mẫu tải tệp gốc hoạt động; dung lượng vẫn chịu giới hạn tải tệp của ứng dụng. Không vô hiệu hóa bảo vệ cho bất kỳ đường dẫn ghi nào.
+- Việc xóa mật khẩu mặc định không tự thay mật khẩu quản trị hiện có. Nếu tài khoản cũ còn dùng mật khẩu tạo sẵn thì quản trị viên cần đổi mật khẩu đó.
+
+### 5. Architecture and Data Flow — Kiến trúc và luồng dữ liệu
+```mermaid
+flowchart LR
+    A[Biểu mẫu hoặc JavaScript] --> B[MultipartFilter nếu có tệp]
+    B --> C[CsrfFilter so mã theo phiên]
+    C -->|Sai hoặc thiếu| D[403 và yêu cầu tải lại trang]
+    C -->|Hợp lệ hoặc phương thức đọc| E[Kiểm tra tài khoản và phân quyền hiện có]
+    E --> F[Bộ điều khiển và dịch vụ]
+```
+- Thymeleaf nhận trường ẩn qua `CsrfRequestDataValueProcessor`; mã không được lưu trong kho trình duyệt.
+- Khi phiên hết hạn, biểu mẫu cũ bị từ chối; tải lại trang lấy mã mới. Đăng xuất hủy toàn bộ phiên.
+
+### 6. Files Changed — Các file thay đổi
+- `pom.xml`: thêm mô-đun bảo vệ yêu cầu web.
+- `src/main/java/main/config/RequestSecurityConfig.java`: kho mã, hai bộ lọc và xử lý biểu mẫu Thymeleaf.
+- `src/main/java/main/controller/AuthController.java`: đổi mã sau đăng nhập và đăng xuất POST.
+- `src/main/java/main/config/DataInitializer.java`: khởi tạo có mật khẩu được cấp rõ ràng, giao dịch và giữ trạng thái tài khoản cũ.
+- `src/main/resources/application-render.properties`: thuộc tính cookie `same-site`.
+- `src/main/resources/templates/index.html`, `profile.html`: biểu mẫu đăng xuất.
+- `src/main/resources/templates/chapter-form.html`, `product-edit.html`: tiêu đề kiểm tra mã cho yêu cầu JavaScript.
+- `src/test/java/main/config/RequestSecurityConfigTest.java`, `DataInitializerTest.java`: kiểm thử từ chối giả mạo và khởi tạo quản trị.
+- `src/test/java/main/ApplicationIntegrationTest.java`: kiểm thử biểu mẫu thực tế trên máy chủ thật.
+- `plan.md`, `reports.md`: trạng thái và báo cáo SEC-02.
+
+### 7. Testing and Validation — Kiểm thử
+- Bản giao riêng từ HEAD cộng đúng các tệp SEC-02, loại các thay đổi đang có của người dùng. Đặt `RUN_DATABASE_TESTS=true`, chạy `mvn -B verify`: **63 bài, 0 thất bại, 0 lỗi, 0 bỏ qua; BUILD SUCCESS**.
+- Kiểm thử bộ lọc: từ chối POST/PUT/PATCH/DELETE thiếu mã; chấp nhận GET/HEAD/OPTIONS; chấp nhận mã qua trường biểu mẫu và tiêu đề; từ chối mã sai và mã thuộc phiên khác.
+- Kiểm thử máy chủ thật: Thymeleaf sinh trường ẩn; đăng ký thiếu/sai mã nhận 403, đúng mã nhận 302; JSON đúng mã vẫn nhận 401 khi chưa đăng nhập; đăng nhập bằng biểu mẫu nhiều phần chứa cả tệp và mã ẩn thành công; mã trước đăng nhập bị từ chối sau đăng nhập; GET đăng xuất nhận 405; POST đúng mã hủy phiên, đường dẫn quản lý sau đó nhận 401.
+- Kiểm thử quản trị: không mở khóa/nâng quyền/đổi mật khẩu tài khoản có sẵn; không tạo quản trị nếu chưa cấp mật khẩu; từ chối mật khẩu ngắn và băm mật khẩu được cấp.
+- Rà soát tất cả biểu mẫu POST trong các template: không có biểu mẫu thiếu `th:action`; không còn thẻ liên kết GET tới `/logout`. Các yêu cầu `fetch` thay đổi dữ liệu đều được bổ sung tiêu đề kiểm tra mã.
+- Xuất lại cây thư viện và đối chiếu OSV: **129 tọa độ Maven/phiên bản, 0 thư viện có cảnh báo được trả về**. Nhật ký và kết quả quét chỉ nằm trong `target/`.
+- `git diff --check` cho các tệp mã nguồn thay đổi không phát hiện lỗi khoảng trắng.
+
+### 8. Limitations and Future Improvements — Hạn chế và cải tiến
+- Máy khách riêng gọi đường dẫn ghi phải lấy phiên và mã từ biểu mẫu, rồi gửi tiêu đề hoặc trường mã tương ứng. Biểu mẫu đã mở trước triển khai cần tải lại trang.
+- Chưa tải ảnh lên Cloudflare R2 thật. Kiểm thử biểu mẫu nhiều phần xác minh đường truyền và thứ tự bộ lọc, không kiểm tra quyền truy cập kho ảnh.
+- Kiểm thử tự động không đo khả năng chịu tải; bộ lọc biểu mẫu nhiều phần vẫn có thể tạo tệp tạm trước khi phát hiện mã sai, trong giới hạn cấu hình tải tệp.
+- `bootstrap.admin-password` chỉ dành cho lần khởi tạo có chủ đích; không cần cung cấp cho hệ thống đã có quản trị. Tên biến môi trường tương ứng: `BOOTSTRAP_ADMIN_PASSWORD`. Không ghi mật khẩu vào kho mã.
+- Xác minh môi trường thật và lần quét của nền tảng vẫn thuộc SEC-03. Tài liệu thành phần: https://docs.spring.io/spring-security/reference/servlet/exploits/csrf.html .
+
+### 9. Final Result — Kết quả cuối cùng
+- Yêu cầu ghi dữ liệu được bảo vệ thống nhất, biểu mẫu và JavaScript đã được tích hợp; bỏ hành vi khởi tạo quản trị không an toàn.
+- SEC-02 đánh dấu `✅` trong `plan.md` sau khi kiểm thử thành công; SEC-03 vẫn để chưa hoàn tất.
+- Nhánh `main` theo chỉ định người dùng; mã commit và kết quả push thực tế được báo riêng sau khi thực hiện.
+
+---

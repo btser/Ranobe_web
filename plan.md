@@ -3,7 +3,7 @@
 Phạm vi phiên này: thực hiện tuần tự SEC-01, SEC-02, SEC-03 trên `main` theo chỉ định trực tiếp của người dùng; giữ nguyên các công việc cũ bên dưới. Các lần push cách nhau ít nhất 5 phút.
 
 - ✅ SEC-01 — Đối chiếu thư viện, nâng bộ phụ thuộc được hỗ trợ, kiểm thử và đóng gói; ghi rõ giới hạn xác minh cảnh báo.
-- [ ] SEC-02 — Bảo vệ thống nhất các yêu cầu thay đổi dữ liệu trước giả mạo từ trang khác; kiểm thử biểu mẫu, yêu cầu JavaScript và tải tệp.
+- ✅ SEC-02 — Bảo vệ thống nhất các yêu cầu thay đổi dữ liệu trước giả mạo từ trang khác; kiểm thử biểu mẫu, yêu cầu JavaScript và tải tệp. Bỏ mật khẩu quản trị mặc định và việc tự mở khóa quản trị khi khởi động được phát hiện trong SEC-01.
 - [ ] SEC-03 — Xác minh phiên bản đang triển khai, kết nối HTTPS và quét lại bằng công cụ của nền tảng sau triển khai; không đánh dấu hoàn tất nếu chưa có bằng chứng.
 
 ---

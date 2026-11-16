@@ -85,7 +85,7 @@
         <th:block th:if="${user != null}">
             <a th:href="@{'/users/' + ${user.userId}}" class="user-name" th:text="${user.userName}">Tên</a>
             <a th:if="${isStaff}" href="/admin" class="btn btn-login">Quản trị</a>
-            <a href="/logout" class="btn btn-logout">Đăng Xuất</a>
+            <form th:action="@{/logout}" method="post" style="display:inline"><button type="submit" class="btn btn-logout">Đăng Xuất</button></form>
         </th:block>
     </div>
 </nav>

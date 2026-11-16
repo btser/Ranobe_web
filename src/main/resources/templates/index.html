@@ -28,7 +28,7 @@
                 
                 <a th:if="${isStaff}" href="/admin" class="btn btn-login">整理</a>
                 <a href="/truyen/add" class="btn btn-add">+ Đăng Truyện</a>
-                <a href="/logout" class="btn btn-logout">Đăng Xuất</a>
+            <form th:action="@{/logout}" method="post" style="display:inline"><button type="submit" class="btn btn-logout">Đăng Xuất</button></form>
             </th:block>
         </div>
     </nav>
