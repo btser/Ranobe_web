@@ -1,8 +1,8 @@
 package main.config;
 
 import org.flywaydb.core.api.MigrationVersion;
-import org.springframework.boot.autoconfigure.flyway.FlywayConfigurationCustomizer;
-import org.springframework.boot.autoconfigure.orm.jpa.HibernatePropertiesCustomizer;
+import org.springframework.boot.flyway.autoconfigure.FlywayConfigurationCustomizer;
+import org.springframework.boot.hibernate.autoconfigure.HibernatePropertiesCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
